@@ -39,7 +39,8 @@ if (fs.existsSync(portalIndex)) {
     portalHtml = portalHtml
       .replace(/href="\.\/web\/"/g, `href="/${repoName}/web/"`)
       .replace(/href="\.\/dashboard\/"/g, `href="/${repoName}/dashboard/"`)
-      .replace(/href="\.\/mobile\/"/g, `href="/${repoName}/mobile/"`);
+      .replace(/href="\.\/mobile\/"/g, `href="/${repoName}/mobile/"`)
+      .replace(/href="\.\/web-mobile\/"/g, `href="/${repoName}/web-mobile/"`);
   }
   fs.writeFileSync(path.join(outputDir, 'index.html'), portalHtml);
 }
@@ -151,8 +152,27 @@ try {
     copyRecursiveSync(mobOut, path.join(outputDir, 'mobile'));
     console.log('✅ Dashboard Celular ensamblado en dist_gh_pages/mobile/\n');
   }
+// 7. Compilar Tienda Móvil
+console.log('📱 [4/4] Compilando Tienda Móvil (sunday-closet-web-mobile)...');
+try {
+  const env = {
+    ...process.env,
+    OUTPUT_MODE: 'export',
+    NEXT_PUBLIC_BASE_PATH: `${basePrefix}/web-mobile`,
+  };
+  execSync('npm run build', {
+    cwd: path.join(rootDir, 'sunday-closet-web-mobile'),
+    stdio: 'inherit',
+    env,
+  });
+
+  const webMobOut = path.join(rootDir, 'sunday-closet-web-mobile', 'out');
+  if (fs.existsSync(webMobOut)) {
+    copyRecursiveSync(webMobOut, path.join(outputDir, 'web-mobile'));
+    console.log('✅ Tienda Móvil ensamblada en dist_gh_pages/web-mobile/\n');
+  }
 } catch (err) {
-  console.warn('⚠️ Advertencia en compilación de mobile:', err.message);
+  console.warn('⚠️ Advertencia en compilación de web-mobile:', err.message);
 }
 
 console.log('========================================================');
