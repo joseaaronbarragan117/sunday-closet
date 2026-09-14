@@ -1,0 +1,22 @@
+{
+  "name": "sunday-closet-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepositorio para Sunday Clóset: Tienda Web, Dashboard Escritorio y App Celular",
+  "scripts": {
+    "dev:dashboard": "npm run dev --prefix sunday-closet-dashboard",
+    "dev:web": "npm run dev --prefix sunday-closet-web",
+    "dev:mobile": "npm run dev --prefix sunday-closet-mobile",
+    "build:all": "node scripts/build-all.mjs",
+    "deploy:gh-pages": "powershell -ExecutionPolicy Bypass -File scripts/deploy-gh-pages.ps1"
+  },
+  "keywords": [
+    "nextjs",
+    "ecommerce",
+    "dashboard",
+    "pwa",
+    "github-pages"
+  ],
+  "author": "Sunday Clóset DevOps",
+  "license": "UNLICENSED"
+}

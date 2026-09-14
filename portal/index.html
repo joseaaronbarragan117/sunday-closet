@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sunday Clóset — Portal de Acceso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              sand: '#C2A78C',
+              dark: '#020617',
+              card: '#0f172a',
+              border: '#1e293b',
+            }
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #020617;
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(194, 167, 140, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white">
+  <!-- Background Glows -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/2 -right-40 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="w-full max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></span>
+      <span class="font-serif italic font-medium text-xl text-slate-100 tracking-wider">Sunday Clóset</span>
+    </div>
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-400">
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span>GitHub Pages Deploy</span>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="w-full max-w-6xl mx-auto px-6 py-12 space-y-12">
+    <div class="text-center space-y-4 max-w-2xl mx-auto">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-300 border border-rose-500/20">
+        ✦ Ecosistema Digital Completo
+      </div>
+      <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal text-slate-100 tracking-tight leading-tight">
+        Selecciona tu entorno de trabajo
+      </h1>
+      <p class="text-slate-400 text-sm sm:text-base font-light leading-relaxed">
+        Accede a la tienda online para clientes, al panel de control para escritorio o a la aplicación móvil optimizada para iPhone.
+      </p>
+    </div>
+
+    <!-- 3 Project Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Card 1: Tienda Online -->
+      <a id="link-web" href="./web/" class="glass-card rounded-3xl p-8 flex flex-col justify-between group cursor-pointer relative overflow-hidden">
+        <div class="space-y-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+            🛍️
+          </div>
+          <div class="space-y-1">
+            <span class="text-xs font-mono tracking-widest text-[#C2A78C] uppercase font-semibold">Público / Clientes</span>
+            <h2 class="text-2xl font-serif text-slate-100 font-medium">Tienda Web</h2>
+          </div>
+          <p class="text-xs text-slate-400 font-light leading-relaxed">
+            Storefront online curado para clientes. Catálogo de drops, fichas de producto detalladas, recomendaciones y carrito de compras.
+          </p>
+        </div>
+        <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300 group-hover:text-[#C2A78C] transition-colors">
+          <span class="font-medium">Abrir Tienda</span>
+          <span class="transform group-hover:translate-x-1 transition-transform">➔</span>
+        </div>
+      </a>
+
+      <!-- Card 2: Dashboard Escritorio -->
+      <a id="link-dashboard" href="./dashboard/" class="glass-card rounded-3xl p-8 flex flex-col justify-between group cursor-pointer relative overflow-hidden">
+        <div class="space-y-4">
+          <div class="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+            💻
+          </div>
+          <div class="space-y-1">
+            <span class="text-xs font-mono tracking-widest text-rose-400 uppercase font-semibold">Administración PC</span>
+            <h2 class="text-2xl font-serif text-slate-100 font-medium">Dashboard Escritorio</h2>
+          </div>
+          <p class="text-xs text-slate-400 font-light leading-relaxed">
+            Panel de control para pantalla ancha. Tabla de inventario completa, control de precios calculados, switch de visibilidad web y eliminación con reordenamiento.
+          </p>
+        </div>
+        <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300 group-hover:text-rose-400 transition-colors">
+          <span class="font-medium">Abrir Dashboard PC</span>
+          <span class="transform group-hover:translate-x-1 transition-transform">➔</span>
+        </div>
+      </a>
+
+      <!-- Card 3: Dashboard Celular -->
+      <a id="link-mobile" href="./mobile/" class="glass-card rounded-3xl p-8 flex flex-col justify-between group cursor-pointer relative overflow-hidden border-rose-500/30">
+        <div class="space-y-4">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+            📱
+          </div>
+          <div class="space-y-1">
+            <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase font-semibold">iPhone / Celular PWA</span>
+            <h2 class="text-2xl font-serif text-slate-100 font-medium">Dashboard Celular</h2>
+          </div>
+          <p class="text-xs text-slate-400 font-light leading-relaxed">
+            Optimizado para pantalla completa en iPhone. Margen superior para Isla Dinámica, tarjetas táctiles rápidas, botón de basura rojo y barra inferior fija.
+          </p>
+        </div>
+        <div class="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300 group-hover:text-emerald-400 transition-colors">
+          <span class="font-medium">Abrir en Celular</span>
+          <span class="transform group-hover:translate-x-1 transition-transform">➔</span>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full max-w-6xl mx-auto px-6 py-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-light">
+    <div>
+      © 2026 Sunday Clóset. Todos los derechos reservados.
+    </div>
+    <div class="flex items-center gap-6">
+      <span>Next.js 16 + Tailwind CSS</span>
+      <span>·</span>
+      <span>GitHub Pages Workflow</span>
+    </div>
+  </footer>
+
+  <!-- Script to ensure relative paths resolve on custom domains or user.github.io/repo -->
+  <script>
+    (function() {
+      // Ensure paths work properly under subdirectories
+      const path = window.location.pathname.replace(/\/+$/, '');
+      document.getElementById('link-web').href = path + '/web/';
+      document.getElementById('link-dashboard').href = path + '/dashboard/';
+      document.getElementById('link-mobile').href = path + '/mobile/';
+    })();
+  </script>
+</body>
+</html>
