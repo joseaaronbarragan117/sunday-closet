@@ -160,11 +160,24 @@
   <!-- Script to ensure relative paths resolve on custom domains or user.github.io/repo -->
   <script>
     (function() {
-      // Ensure paths work properly under subdirectories
-      const path = window.location.pathname.replace(/\/+$/, '');
-      document.getElementById('link-web').href = path + '/web/';
-      document.getElementById('link-dashboard').href = path + '/dashboard/';
-      document.getElementById('link-mobile').href = path + '/mobile/';
+      // Si el navegador llega con una redirección SPA del 404 (ej. ?/mobile/ o ?/web/)
+      var search = window.location.search;
+      if (search && search.indexOf('?/') === 0) {
+        var cleanPath = search.slice(2).split('&')[0];
+        var basePath = window.location.pathname.replace(/\/+$/, '');
+        window.location.replace(basePath + '/' + cleanPath);
+        return;
+      }
+
+      // Configurar URLs absolutas dinámicamente según el subdirectorio de GitHub Pages
+      var path = window.location.pathname.replace(/\/+$/, '');
+      var webLink = document.getElementById('link-web');
+      var dashLink = document.getElementById('link-dashboard');
+      var mobLink = document.getElementById('link-mobile');
+
+      if (webLink) webLink.href = path + '/web/';
+      if (dashLink) dashLink.href = path + '/dashboard/';
+      if (mobLink) mobLink.href = path + '/mobile/';
     })();
   </script>
 </body>

@@ -3,7 +3,7 @@ import { fetchLiveProducts } from "@/lib/data/getProducts";
 import HeroSection from "@/components/home/HeroSection";
 import ProductGrid from "@/components/home/ProductGrid";
 
-export const revalidate = 0; // Fresh fetch on every request
+export const dynamic = 'force-static';
 
 export default async function HomePage() {
   const products = await fetchLiveProducts();

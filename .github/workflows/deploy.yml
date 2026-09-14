@@ -46,7 +46,10 @@ jobs:
         run: |
           cd sunday-closet-dashboard
           npm install
-          OUTPUT_MODE=export NEXT_PUBLIC_BASE_PATH="/${{ github.event.repository.name }}/dashboard" npm run build || echo "Export estático de dashboard completado con advertencias toleradas"
+          if [ -d "app/api" ]; then mv app/api app/_api_temp; fi
+          rm -rf .next
+          OUTPUT_MODE=export NEXT_PUBLIC_BASE_PATH="/${{ github.event.repository.name }}/dashboard" npm run build
+          if [ -d "app/_api_temp" ]; then mv app/_api_temp app/api; fi
           cd ..
 
       # ── BUILD: DASHBOARD CELULAR ──
@@ -54,7 +57,10 @@ jobs:
         run: |
           cd sunday-closet-mobile
           npm install
-          OUTPUT_MODE=export NEXT_PUBLIC_BASE_PATH="/${{ github.event.repository.name }}/mobile" npm run build || echo "Export estático de móvil completado con advertencias toleradas"
+          if [ -d "app/api" ]; then mv app/api app/_api_temp; fi
+          rm -rf .next
+          OUTPUT_MODE=export NEXT_PUBLIC_BASE_PATH="/${{ github.event.repository.name }}/mobile" npm run build
+          if [ -d "app/_api_temp" ]; then mv app/_api_temp app/api; fi
           cd ..
 
       # ── ENSAMBLAJE DEL PORTAL UNIFICADO ──
@@ -70,17 +76,17 @@ jobs:
           cp portal/404.html public_deploy/404.html
 
           # Copiar salidas estáticas
-          if [ -d "sunday-closet-web/out" ]; then
-            cp -r sunday-closet-web/out/* public_deploy/web/
-          fi
+          cp -r sunday-closet-web/out/* public_deploy/web/
+          cp -r sunday-closet-dashboard/out/* public_deploy/dashboard/
+          cp -r sunday-closet-mobile/out/* public_deploy/mobile/
 
-          if [ -d "sunday-closet-dashboard/out" ]; then
-            cp -r sunday-closet-dashboard/out/* public_deploy/dashboard/
-          fi
-
-          if [ -d "sunday-closet-mobile/out" ]; then
-            cp -r sunday-closet-mobile/out/* public_deploy/mobile/
-          fi
+          # Verificación de integridad estricta: asegurar que index.html exista en cada aplicación
+          echo "Verificando existencia de index.html en cada sitio..."
+          test -f public_deploy/index.html
+          test -f public_deploy/web/index.html
+          test -f public_deploy/dashboard/index.html
+          test -f public_deploy/mobile/index.html
+          echo "✅ Todos los proyectos compilaron y tienen su index.html listo para GitHub Pages!"
 
       - name: 7. Subir artefacto a GitHub Pages
         uses: actions/upload-pages-artifact@v3

@@ -88,18 +88,30 @@ try {
 // 5. Compilar Dashboard Escritorio
 console.log('💻 [2/3] Compilando Dashboard Escritorio (sunday-closet-dashboard)...');
 try {
-  const env = {
-    ...process.env,
-    OUTPUT_MODE: 'export',
-    NEXT_PUBLIC_BASE_PATH: `${basePrefix}/dashboard`,
-  };
-  execSync('npm run build', {
-    cwd: path.join(rootDir, 'sunday-closet-dashboard'),
-    stdio: 'inherit',
-    env,
-  });
+  const dashDir = path.join(rootDir, 'sunday-closet-dashboard');
+  const apiDir = path.join(dashDir, 'app', 'api');
+  const apiTemp = path.join(dashDir, 'app', '_api_temp');
+  const nextCache = path.join(dashDir, '.next');
 
-  const dashOut = path.join(rootDir, 'sunday-closet-dashboard', 'out');
+  if (fs.existsSync(apiDir)) fs.renameSync(apiDir, apiTemp);
+  if (fs.existsSync(nextCache)) fs.rmSync(nextCache, { recursive: true, force: true });
+
+  try {
+    const env = {
+      ...process.env,
+      OUTPUT_MODE: 'export',
+      NEXT_PUBLIC_BASE_PATH: `${basePrefix}/dashboard`,
+    };
+    execSync('npm run build', {
+      cwd: dashDir,
+      stdio: 'inherit',
+      env,
+    });
+  } finally {
+    if (fs.existsSync(apiTemp)) fs.renameSync(apiTemp, apiDir);
+  }
+
+  const dashOut = path.join(dashDir, 'out');
   if (fs.existsSync(dashOut)) {
     copyRecursiveSync(dashOut, path.join(outputDir, 'dashboard'));
     console.log('✅ Dashboard Escritorio ensamblado en dist_gh_pages/dashboard/\n');
@@ -111,18 +123,30 @@ try {
 // 6. Compilar Dashboard Celular
 console.log('📱 [3/3] Compilando Dashboard Celular (sunday-closet-mobile)...');
 try {
-  const env = {
-    ...process.env,
-    OUTPUT_MODE: 'export',
-    NEXT_PUBLIC_BASE_PATH: `${basePrefix}/mobile`,
-  };
-  execSync('npm run build', {
-    cwd: path.join(rootDir, 'sunday-closet-mobile'),
-    stdio: 'inherit',
-    env,
-  });
+  const mobDir = path.join(rootDir, 'sunday-closet-mobile');
+  const apiDir = path.join(mobDir, 'app', 'api');
+  const apiTemp = path.join(mobDir, 'app', '_api_temp');
+  const nextCache = path.join(mobDir, '.next');
 
-  const mobOut = path.join(rootDir, 'sunday-closet-mobile', 'out');
+  if (fs.existsSync(apiDir)) fs.renameSync(apiDir, apiTemp);
+  if (fs.existsSync(nextCache)) fs.rmSync(nextCache, { recursive: true, force: true });
+
+  try {
+    const env = {
+      ...process.env,
+      OUTPUT_MODE: 'export',
+      NEXT_PUBLIC_BASE_PATH: `${basePrefix}/mobile`,
+    };
+    execSync('npm run build', {
+      cwd: mobDir,
+      stdio: 'inherit',
+      env,
+    });
+  } finally {
+    if (fs.existsSync(apiTemp)) fs.renameSync(apiTemp, apiDir);
+  }
+
+  const mobOut = path.join(mobDir, 'out');
   if (fs.existsSync(mobOut)) {
     copyRecursiveSync(mobOut, path.join(outputDir, 'mobile'));
     console.log('✅ Dashboard Celular ensamblado en dist_gh_pages/mobile/\n');

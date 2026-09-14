@@ -524,21 +524,21 @@ export default function MobileDashboardPage() {
         <AddItemModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onAdd={handleAddItem}
+          onSubmit={handleAddItem}
         />
 
         <PosModal
           isOpen={isPosModalOpen}
           onClose={() => setIsPosModalOpen(false)}
-          inventory={items}
-          onSaleComplete={fetchInventory}
+          items={items}
+          onSaleCompleted={() => { fetchInventory(); }}
         />
 
         <BannerModal
           isOpen={isBannerModalOpen}
           onClose={() => setIsBannerModalOpen(false)}
           onUpdateBanner={handleUpdateBanner}
-          isUpdating={false}
+          isSubmitting={false}
         />
       </div>
     </ErrorBoundary>

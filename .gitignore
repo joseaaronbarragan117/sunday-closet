@@ -13,6 +13,13 @@ build/
 **/build/
 dist/
 **/dist/
+dist_gh_pages/
+public_deploy/
+**/public/sw.js
+**/public/sw.js.map
+**/public/workbox-*.js
+**/public/workbox-*.js.map
+**/public/swe-worker-*.js
 
 # Entorno y Secretos (¡CRÍTICO: Credenciales de Google Sheets nunca deben subirse a GitHub!)
 .env
