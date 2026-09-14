@@ -1,7 +1,7 @@
 // src/lib/data/getBanner.ts
 
 const DASHBOARD_BANNER_API =
-  process.env.NEXT_PUBLIC_BANNER_API_URL || 'http://localhost:3000/api/banner';
+  process.env.NEXT_PUBLIC_BANNER_API_URL || 'https://sunday-closet-dashboard.vercel.app/api/banner';
 
 export async function fetchBannerUrl(): Promise<string | null> {
   try {

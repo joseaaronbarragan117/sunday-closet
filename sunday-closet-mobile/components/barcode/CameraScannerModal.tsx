@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Camera, Flashlight, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Flashlight, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from '@zxing/library';
 
 interface CameraScannerModalProps {
   isOpen: boolean;
@@ -15,12 +16,14 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
   onScanSuccess,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [torchOn, setTorchOn] = useState(false);
   const [hasTorch, setHasTorch] = useState(false);
-  const [isDetecting, setIsDetecting] = useState(false);
   const [manualCode, setManualCode] = useState('');
+  const [detectedCode, setDetectedCode] = useState<string | null>(null);
+  const [cameraList, setCameraList] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
 
   // Audio beep
   const playScanBeep = () => {
@@ -39,151 +42,176 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
     } catch {}
   };
 
-  // Start camera and barcode detection
   useEffect(() => {
-    if (!isOpen) return;
-
-    let isMounted = true;
-    let animationId: number | null = null;
-    let detector: any = null;
-
-    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
-      try {
-        detector = new (window as any).BarcodeDetector({
-          formats: ['code_128', 'code_39', 'qr_code', 'ean_13', 'upc_a'],
-        });
-      } catch (err) {
-        console.warn('BarcodeDetector format error:', err);
+    if (!isOpen) {
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+        codeReaderRef.current = null;
       }
+      setDetectedCode(null);
+      return;
     }
 
-    const startCamera = async () => {
+    let isMounted = true;
+
+    // Configure ZXing hints for CODE 128 and 1D barcodes
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.UPC_A,
+    ]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+
+    const codeReader = new BrowserMultiFormatReader(hints, 250);
+    codeReaderRef.current = codeReader;
+
+    const startScanner = async () => {
       setErrorMessage(null);
-      setIsDetecting(true);
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-          audio: false,
-        });
+        const videoInputDevices = await codeReader.listVideoInputDevices();
+        if (!isMounted) return;
 
-        if (!isMounted) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
+        setCameraList(videoInputDevices);
+
+        // Find rear/back camera by default
+        let deviceIdToUse: string | null = selectedDeviceId;
+        if (!deviceIdToUse && videoInputDevices.length > 0) {
+          const backCam = videoInputDevices.find((device) =>
+            /back|rear|environment|trasera/i.test(device.label)
+          );
+          deviceIdToUse = backCam ? backCam.deviceId : videoInputDevices[videoInputDevices.length - 1].deviceId;
+          setSelectedDeviceId(deviceIdToUse);
         }
 
-        streamRef.current = stream;
+        if (!videoRef.current) return;
 
-        // Check if torch/flashlight is supported
-        const track = stream.getVideoTracks()[0];
-        const capabilities: any = track.getCapabilities ? track.getCapabilities() : {};
-        if (capabilities.torch) {
-          setHasTorch(true);
-        }
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.setAttribute('playsinline', 'true');
-          await videoRef.current.play();
-        }
-
-        // Loop detection
-        const scanLoop = async () => {
-          if (!isMounted || !videoRef.current) return;
-
-          if (detector && videoRef.current.readyState >= 2) {
-            try {
-              const barcodes = await detector.detect(videoRef.current);
-              if (barcodes && barcodes.length > 0) {
-                const found = barcodes[0].rawValue;
-                if (found && found.trim()) {
-                  playScanBeep();
-                  try {
-                    navigator.vibrate?.([120, 60, 120]);
-                  } catch {}
-                  onScanSuccess(found.trim());
-                  return;
-                }
+        codeReader.decodeFromVideoDevice(
+          deviceIdToUse || null,
+          videoRef.current,
+          (result, error) => {
+            if (!isMounted) return;
+            if (result) {
+              const text = result.getText();
+              if (text && text.trim()) {
+                setDetectedCode(text.trim());
+                playScanBeep();
+                try {
+                  navigator.vibrate?.([100, 50, 100]);
+                } catch {}
+                codeReader.reset();
+                setTimeout(() => {
+                  onScanSuccess(text.trim());
+                }, 300);
               }
-            } catch {}
+            }
           }
+        );
 
-          animationId = requestAnimationFrame(scanLoop);
-        };
-
-        animationId = requestAnimationFrame(scanLoop);
+        // Check torch support
+        setTimeout(() => {
+          if (!isMounted || !videoRef.current) return;
+          const stream = videoRef.current.srcObject as MediaStream;
+          if (stream) {
+            const track = stream.getVideoTracks()[0];
+            const caps: any = track?.getCapabilities ? track.getCapabilities() : {};
+            if (caps.torch) {
+              setHasTorch(true);
+            }
+          }
+        }, 1000);
       } catch (err: any) {
-        console.error('Error opening camera:', err);
+        console.error('[CameraScannerModal] Scanner error:', err);
         if (isMounted) {
           setErrorMessage(
             err.name === 'NotAllowedError'
-              ? 'Permiso de cámara denegado. Por favor autoriza el acceso a la cámara para escanear.'
-              : 'No se pudo acceder a la cámara trasera. Asegúrate de estar en HTTPS.'
+              ? 'Permiso de cámara denegado. Permite el acceso a la cámara en los ajustes de tu navegador.'
+              : 'No se pudo acceder a la cámara. Verifica que ninguna otra app la esté usando.'
           );
         }
       }
     };
 
-    startCamera();
+    startScanner();
 
     return () => {
       isMounted = false;
-      if (animationId) cancelAnimationFrame(animationId);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+        codeReaderRef.current = null;
       }
     };
-  }, [isOpen, onScanSuccess]);
+  }, [isOpen, selectedDeviceId, onScanSuccess]);
 
-  // Toggle flashlight
+  // Toggle torch / flashlight
   const toggleTorch = async () => {
-    if (!streamRef.current) return;
-    const track = streamRef.current.getVideoTracks()[0];
-    if (track) {
-      try {
-        const next = !torchOn;
-        await (track as any).applyConstraints({ advanced: [{ torch: next }] });
-        setTorchOn(next);
-      } catch {}
+    if (!videoRef.current) return;
+    const stream = videoRef.current.srcObject as MediaStream;
+    if (stream) {
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        try {
+          const next = !torchOn;
+          await (track as any).applyConstraints({ advanced: [{ torch: next }] });
+          setTorchOn(next);
+        } catch {}
+      }
     }
+  };
+
+  // Switch to another camera if multiple exist
+  const handleSwitchCamera = () => {
+    if (cameraList.length <= 1) return;
+    const currentIndex = cameraList.findIndex((c) => c.deviceId === selectedDeviceId);
+    const nextIndex = (currentIndex + 1) % cameraList.length;
+    setSelectedDeviceId(cameraList[nextIndex].deviceId);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-between p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg flex flex-col items-center justify-between p-4 animate-in fade-in duration-200">
       {/* Header Top Controls */}
       <div className="w-full max-w-md flex items-center justify-between text-white py-2 z-10">
         <div className="flex items-center gap-2">
           <span className="text-xl">📷</span>
           <div>
-            <h3 className="font-bold text-sm">Escáner de Código de Barras</h3>
-            <p className="text-[11px] text-slate-400">Apunta la cámara a la etiqueta de la prenda</p>
+            <h3 className="font-bold text-sm">Escáner CODE 128</h3>
+            <p className="text-[11px] text-slate-400">Alinea el código de barras en el marco</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {cameraList.length > 1 && (
+            <button
+              onClick={handleSwitchCamera}
+              title="Cambiar cámara"
+              className="p-2.5 rounded-full bg-slate-800 text-slate-200 border border-slate-700 active:scale-95"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          )}
+
           {hasTorch && (
             <button
               onClick={toggleTorch}
+              title="Linterna"
               className={`p-2.5 rounded-full border transition-colors ${
                 torchOn
                   ? 'bg-amber-400 text-black border-amber-300 shadow-lg shadow-amber-400/40'
                   : 'bg-slate-800 text-slate-300 border-slate-700'
               }`}
             >
-              <Flashlight className="w-5 h-5" />
+              <Flashlight className="w-4 h-4" />
             </button>
           )}
 
           <button
             onClick={onClose}
-            className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700"
+            className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 active:scale-95"
           >
             <X className="w-5 h-5" />
           </button>
@@ -201,22 +229,38 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
         />
 
         {/* Target Reticle / Scanning Frame */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-8">
-          <div className="w-64 h-36 border-2 border-rose-500/80 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-6">
+          <div className="w-72 h-44 border-2 border-rose-500/80 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
             {/* Corner highlights */}
-            <div className="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-rose-400 rounded-tl"></div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-rose-400 rounded-tr"></div>
-            <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-rose-400 rounded-bl"></div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-rose-400 rounded-br"></div>
+            <div className="absolute -top-1.5 -left-1.5 w-5 h-5 border-t-4 border-l-4 border-rose-400 rounded-tl"></div>
+            <div className="absolute -top-1.5 -right-1.5 w-5 h-5 border-t-4 border-r-4 border-rose-400 rounded-tr"></div>
+            <div className="absolute -bottom-1.5 -left-1.5 w-5 h-5 border-b-4 border-l-4 border-rose-400 rounded-bl"></div>
+            <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 border-b-4 border-r-4 border-rose-400 rounded-br"></div>
 
-            {/* Moving Laser Line Animation */}
-            <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent absolute top-0 animate-[bounce_2s_infinite] shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
+            {/* Red Laser Scanning Line */}
+            <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent absolute top-0 animate-[bounce_1.8s_infinite] shadow-[0_0_10px_rgba(244,63,94,1)]"></div>
+
+            {/* Center crosshair */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-8 h-0.5 bg-rose-500/40"></div>
+            </div>
           </div>
         </div>
 
+        {/* Detected Code Banner */}
+        {detectedCode && (
+          <div className="absolute inset-0 bg-emerald-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center space-y-2 z-20 animate-in zoom-in-95">
+            <CheckCircle2 className="w-12 h-12 text-emerald-400 animate-bounce" />
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider">¡Código detectado!</h4>
+            <span className="font-mono text-xl font-black text-emerald-300 bg-emerald-950/80 px-4 py-1.5 rounded-xl border border-emerald-500/40">
+              {detectedCode}
+            </span>
+          </div>
+        )}
+
         {/* Error message overlay */}
         {errorMessage && (
-          <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center space-y-3">
+          <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center space-y-3 z-20">
             <AlertCircle className="w-10 h-10 text-rose-400" />
             <p className="text-xs text-rose-200">{errorMessage}</p>
           </div>
@@ -236,8 +280,8 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
                 onScanSuccess(manualCode.trim());
               }
             }}
-            placeholder="O escribe el SKU manual aquí..."
-            className="flex-1 bg-slate-900 text-white placeholder-slate-500 text-xs px-4 py-2.5 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 uppercase"
+            placeholder="O escribe el SKU aquí..."
+            className="flex-1 bg-slate-900 text-white placeholder-slate-500 text-xs px-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 uppercase font-mono tracking-wider"
           />
           <button
             onClick={() => {
@@ -247,13 +291,13 @@ export const CameraScannerModal: React.FC<CameraScannerModalProps> = ({
               }
             }}
             disabled={!manualCode.trim()}
-            className="px-4 py-2.5 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white text-xs font-semibold rounded-2xl"
+            className="px-5 py-3 bg-rose-500 hover:bg-rose-600 active:scale-95 disabled:opacity-50 text-white text-xs font-bold rounded-2xl transition-all shadow-md shadow-rose-500/20"
           >
             Agregar
           </button>
         </div>
-        <p className="text-[10px] text-center text-slate-400">
-          Sunday Clóset · Reconocimiento instantáneo CODE 128
+        <p className="text-[11px] text-center text-slate-400 font-medium">
+          Sunday Clóset · Motor de escaneo industrial CODE 128
         </p>
       </div>
     </div>

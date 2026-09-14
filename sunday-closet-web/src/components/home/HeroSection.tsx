@@ -34,6 +34,7 @@ export default function HeroSection({ featuredProduct }: HeroSectionProps) {
           <img
             src={bannerUrl}
             alt="Sunday Clóset Editorial Banner"
+            referrerPolicy="no-referrer"
             className="w-full h-full object-cover object-center"
             onError={() => setHasError(true)}
           />
