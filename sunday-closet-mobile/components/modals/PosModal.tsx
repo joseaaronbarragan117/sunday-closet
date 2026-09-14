@@ -5,6 +5,7 @@ import { InventoryItem } from "@/types/inventory";
 import { formatDriveImageUrl } from "@/lib/imageUrl";
 import { DriveImage } from "@/components/common/DriveImage";
 import { getApiBase } from "@/lib/apiConfig";
+import { CameraScannerModal } from "@/components/barcode/CameraScannerModal";
 import {
   Store,
   X,
@@ -46,6 +47,7 @@ export const PosModal: React.FC<PosModalProps> = ({
   const [customerNotes, setCustomerNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -226,36 +228,51 @@ export const PosModal: React.FC<PosModalProps> = ({
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
           {/* Left Column: Finder & Available Items (7 cols) */}
           <div className="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 p-6 overflow-hidden">
-            {/* Search / Barcode Input */}
-            <div className="relative mb-4">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Barcode className="w-5 h-5 text-rose-400" />
+            {/* Search / Barcode Input with Camera Button */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Barcode className="w-5 h-5 text-rose-400" />
+                </div>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Buscar por SKU, tipo, marca..."
+                  className="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-950 border border-slate-700/80 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm placeholder:text-slate-500 text-white transition-all shadow-inner"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Escanear código de barras o buscar por SKU, prenda, marca..."
-                className="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-950 border border-slate-700/80 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm placeholder:text-slate-500 text-white transition-all shadow-inner"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    searchInputRef.current?.focus();
-                  }}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+
+              {/* Botón Escanear con Cámara 📷 */}
+              <button
+                type="button"
+                onClick={() => setIsCameraOpen(true)}
+                title="Escanear código de barras con la cámara del celular"
+                className="px-3.5 py-3 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 active:scale-95 border border-rose-500/40 text-rose-300 flex items-center gap-1.5 text-xs font-semibold shrink-0 transition-all cursor-pointer shadow-xs"
+              >
+                <span className="text-base">📷</span>
+                <span className="inline font-bold">Cámara</span>
+              </button>
             </div>
 
             {/* Subheader hint */}
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-3 px-1">
-              <span>{searchTerm.trim() ? "Resultados de búsqueda" : "Prendas disponibles para venta"}</span>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 mb-3 px-1">
+              <span className="text-rose-300/90 flex items-center gap-1 font-medium">
+                <span>📷</span> Usa la cámara o escribe el código para agregar al carrito.
+              </span>
               <span className="font-mono text-slate-500">{availableItems.length} disponibles</span>
             </div>
 
@@ -454,6 +471,32 @@ export const PosModal: React.FC<PosModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Modal de Escaneo con Cámara Móvil */}
+      <CameraScannerModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onScanSuccess={(scannedSku) => {
+          setIsCameraOpen(false);
+          const query = scannedSku.trim().toLowerCase();
+          const matched = availableItems.find(
+            (i) => i.sku.toLowerCase() === query
+          );
+
+          if (matched) {
+            handleAddToCart(matched);
+            setFeedbackMsg({
+              type: "success",
+              text: `📷 ¡Prenda escaneada: ${matched.sku} (${matched.type}) añadida al carrito!`,
+            });
+          } else {
+            setFeedbackMsg({
+              type: "error",
+              text: `Prenda con código "${scannedSku}" no encontrada o no disponible.`,
+            });
+          }
+        }}
+      />
     </div>
   );
 };

@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, X } from 'lucide-react';
+import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, Printer, X } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'inventory' | 'add' | 'schedule' | 'banner' | 'pos';
-  setActiveTab: (tab: 'inventory' | 'add' | 'schedule' | 'banner' | 'pos') => void;
+  activeTab: 'inventory' | 'print' | 'add' | 'schedule' | 'banner' | 'pos';
+  setActiveTab: (tab: 'inventory' | 'print' | 'add' | 'schedule' | 'banner' | 'pos') => void;
   onOpenAddModal: () => void;
   onOpenScheduleModal: () => void;
   onOpenBannerModal: () => void;
@@ -89,6 +89,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Inventario Activo</span>
             </div>
             <Tag className="w-3.5 h-3.5 opacity-60" />
+          </button>
+
+          {/* Impresión de Etiquetas Navigation Button */}
+          <button
+            id="btn-nav-print"
+            onClick={() => setActiveTab('print')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === 'print'
+                ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-xs font-semibold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Printer className="w-4 h-4 text-purple-400" />
+              <span>Impresión Etiquetas</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">
+              CODE 128
+            </span>
           </button>
 
           {/* Venta Manual / POS Navigation Button */}

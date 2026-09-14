@@ -98,17 +98,53 @@ export const PosModal: React.FC<PosModalProps> = ({
     searchInputRef.current?.focus();
   };
 
+  // Audio feedback for barcode scan
+  const playScanBeep = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    } catch {}
+  };
+
   // Handle barcode scanner Enter or exact SKU match
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
+      const query = searchTerm.trim().toLowerCase();
+      if (!query) return;
+
       const exactMatch = availableItems.find(
-        (i) => i.sku.toLowerCase() === searchTerm.trim().toLowerCase()
+        (i) => i.sku.toLowerCase() === query
       );
+
       if (exactMatch) {
         handleAddToCart(exactMatch);
+        playScanBeep();
+        setFeedbackMsg({
+          type: "success",
+          text: `🏷️ ¡Prenda escaneada: ${exactMatch.sku} (${exactMatch.type}) añadida al carrito!`,
+        });
       } else if (searchResults.length === 1) {
         handleAddToCart(searchResults[0]);
+        playScanBeep();
+        setFeedbackMsg({
+          type: "success",
+          text: `🏷️ ¡Prenda escaneada: ${searchResults[0].sku} (${searchResults[0].type}) añadida al carrito!`,
+        });
+      } else if (searchResults.length === 0) {
+        setFeedbackMsg({
+          type: "error",
+          text: `No se encontró la prenda con código "${searchTerm}". Verifica que esté Disponible.`,
+        });
       }
     }
   };
@@ -226,36 +262,52 @@ export const PosModal: React.FC<PosModalProps> = ({
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
           {/* Left Column: Finder & Available Items (7 cols) */}
           <div className="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 p-6 overflow-hidden">
-            {/* Search / Barcode Input */}
-            <div className="relative mb-4">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Barcode className="w-5 h-5 text-rose-400" />
+            {/* Search / Barcode Input with Gun Mode Button */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Barcode className="w-5 h-5 text-purple-400" />
+                </div>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Escanea con la pistola o escribe SKU, prenda, marca..."
+                  className="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-950 border border-slate-700/80 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 text-sm placeholder:text-slate-500 text-white transition-all shadow-inner"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Escanear código de barras o buscar por SKU, prenda, marca..."
-                className="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-950 border border-slate-700/80 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm placeholder:text-slate-500 text-white transition-all shadow-inner"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    searchInputRef.current?.focus();
-                  }}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+
+              {/* Botón Modo Pistola */}
+              <button
+                type="button"
+                onClick={() => searchInputRef.current?.focus()}
+                title="Activar lectura con pistola de código de barras USB/Bluetooth"
+                className="px-3.5 py-3 rounded-2xl bg-purple-500/15 hover:bg-purple-500/25 active:scale-95 border border-purple-500/30 text-purple-300 flex items-center gap-2 text-xs font-semibold shrink-0 transition-all cursor-pointer shadow-xs"
+              >
+                <Barcode className="w-4 h-4 text-purple-400" />
+                <span className="hidden sm:inline">Modo Pistola</span>
+              </button>
             </div>
 
-            {/* Subheader hint */}
-            <div className="flex items-center justify-between text-xs text-slate-400 mb-3 px-1">
-              <span>{searchTerm.trim() ? "Resultados de búsqueda" : "Prendas disponibles para venta"}</span>
+            {/* Indicator hint for barcode scanner */}
+            <div className="flex items-center justify-between text-[11px] text-slate-400 mb-3 px-1">
+              <span className="text-purple-300/80 flex items-center gap-1.5 font-medium">
+                <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                Pistola lista: al disparar el código se añadirá al carrito automáticamente.
+              </span>
               <span className="font-mono text-slate-500">{availableItems.length} disponibles</span>
             </div>
 

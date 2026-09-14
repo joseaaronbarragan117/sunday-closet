@@ -8,6 +8,7 @@ import { AddItemModal } from '@/components/modals/AddItemModal';
 import { DropSchedulerModal } from '@/components/modals/DropSchedulerModal';
 import { BannerModal } from '@/components/modals/BannerModal';
 import { PosModal } from '@/components/modals/PosModal';
+import { PrintView } from '@/components/print/PrintView';
 import { InventoryItem, NewItemFormData, ScheduleDropPayload } from '@/types/inventory';
 import { Tag, Eye, EyeOff, Sparkles, Filter, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
@@ -48,7 +49,7 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
 export default function DashboardPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'inventory' | 'add' | 'schedule' | 'banner' | 'pos'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'print' | 'add' | 'schedule' | 'banner' | 'pos'>('inventory');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
@@ -396,8 +397,12 @@ export default function DashboardPage() {
           }}
           className="p-4 md:p-8 space-y-6 max-w-7xl w-full mx-auto"
         >
-          {/* Header Dashboard Banner */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900 border border-slate-800 relative overflow-hidden shadow-2xl">
+          {activeTab === 'print' ? (
+            <PrintView items={items} />
+          ) : (
+            <>
+              {/* Header Dashboard Banner */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900 border border-slate-800 relative overflow-hidden shadow-2xl">
             <div className="space-y-1 relative z-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
                 <Sparkles className="w-3.5 h-3.5" /> Sunday Clóset Operational Hub
@@ -514,15 +519,17 @@ export default function DashboardPage() {
               </div>
             </div>
           ) : (
-            <InventoryTable
-              items={filteredItems}
-              onToggleVisibility={handleToggleVisibility}
-              onDeleteItem={handleDeleteItem}
-              isUpdatingSku={updatingSku}
-              isDeletingSku={deletingSku}
-            />
-          )}
-        </main>
+              <InventoryTable
+                items={filteredItems}
+                onToggleVisibility={handleToggleVisibility}
+                onDeleteItem={handleDeleteItem}
+                isUpdatingSku={updatingSku}
+                isDeletingSku={deletingSku}
+              />
+            )}
+          </>
+        )}
+      </main>
       </div>
 
       {/* Modals */}
