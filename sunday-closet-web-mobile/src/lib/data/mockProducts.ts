@@ -13,6 +13,7 @@ export interface Product {
   talla: string;      // "XS" | "S" | "M" | "L" | "XL" | "XXL"
   color?: string;     // ej. "Negro", "Beige", "Blanco", "Azul", etc.
   precio: number;
+  precioOriginal?: number;
   estado: ProductStatus;
   categoriaRopa: ClothingCategory;
   descripcion: string;

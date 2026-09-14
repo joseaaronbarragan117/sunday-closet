@@ -26,16 +26,18 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
   const isAvailable = product.estado === "disponible";
   const photoUrl = formatDriveImageUrl(product.imagenUrl);
 
-  // Calculate reference original price (~18% higher for the -15% discount badge style of H&M)
-  const originalPrice = Math.round(product.precio * 1.18);
+  const hasDiscount = Boolean(product.precioOriginal && product.precioOriginal > product.precio);
+  const discountPercent = hasDiscount
+    ? Math.round((1 - product.precio / product.precioOriginal!) * 100)
+    : 0;
 
   return (
     <div
       onClick={() => onOpenDetail(product)}
       className="group flex flex-col bg-white cursor-pointer select-none pb-4"
     >
-      {/* Product Image Media Container (exact as Screenshot 3 & 4) */}
-      <div className={`relative w-full ${isSingleColumn ? "aspect-3/4 max-h-[500px]" : "aspect-3/4"} bg-[#F4F4F4] overflow-hidden`}>
+      {/* Product Image Media Container */}
+      <div className={`relative w-full ${isSingleColumn ? "aspect-3/4 max-h-[500px]" : "aspect-3/4"} bg-[#F4F4F4] overflow-hidden rounded-xs`}>
         {!imgError && photoUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -56,14 +58,20 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
           </div>
         )}
 
-        {/* Bottom-left Black Tag Pill (exact as Screenshots 3 & 4: "-15%") */}
+        {/* Bottom-left Tag Pill (ONLY shows discount if hasDiscount, or AGOTADO) */}
         <div className="absolute bottom-0 left-0 z-10">
-          <span className="bg-black text-white text-[10px] sm:text-[11px] font-bold px-2 py-1 inline-block uppercase tracking-wider">
-            {isAvailable ? "-15%" : "AGOTADO"}
-          </span>
+          {!isAvailable ? (
+            <span className="bg-black text-white text-[10px] sm:text-[11px] font-bold px-2 py-1 inline-block uppercase tracking-wider">
+              AGOTADO
+            </span>
+          ) : hasDiscount ? (
+            <span className="bg-black text-white text-[10px] sm:text-[11px] font-bold px-2 py-1 inline-block uppercase tracking-wider">
+              -{discountPercent}%
+            </span>
+          ) : null}
         </div>
 
-        {/* Bottom-right Floating Heart Outline (exact as Screenshots 3 & 4) */}
+        {/* Bottom-right Floating Heart Outline */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -82,8 +90,8 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
         </button>
       </div>
 
-      {/* Card Info Below Image (exact typography & spacing as Screenshots 3 & 4) */}
-      <div className="pt-2 space-y-0.5">
+      {/* Card Info Below Image */}
+      <div className="pt-2.5 space-y-0.5">
         {/* Sub-brand / Line */}
         <span className="block text-[10px] text-[#767676] uppercase tracking-wider font-semibold">
           {product.marca || "SUNDAY CURATED"}
@@ -94,17 +102,25 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
           {product.nombre || product.tipo}
         </h3>
 
-        {/* Price Row: Red Offer Price + Grey Original Crossed-Out Price */}
+        {/* Price Row: Red ONLY if hasDiscount, otherwise clean black */}
         <div className="flex items-baseline gap-1.5 pt-0.5">
-          <span className="text-xs sm:text-sm font-bold text-[#E50010]">
-            {formatPrice(product.precio)}
-          </span>
-          <span className="text-[11px] text-[#767676] line-through font-normal">
-            {formatPrice(originalPrice)}
-          </span>
+          {hasDiscount ? (
+            <>
+              <span className="text-xs sm:text-sm font-bold text-[#E50010]">
+                {formatPrice(product.precio)}
+              </span>
+              <span className="text-[11px] text-[#767676] line-through font-normal">
+                {formatPrice(product.precioOriginal!)}
+              </span>
+            </>
+          ) : (
+            <span className="text-xs sm:text-sm font-bold text-black">
+              {formatPrice(product.precio)}
+            </span>
+          )}
         </div>
 
-        {/* Color / Variant Swatches (exact as Screenshot 4: ■ ■ ■ +2) */}
+        {/* Color / Variant Swatches */}
         <div className="flex items-center gap-1 pt-1">
           <span className="w-2.5 h-2.5 bg-black inline-block border border-neutral-300" />
           <span className="w-2.5 h-2.5 bg-[#8B7355] inline-block border border-neutral-300" />

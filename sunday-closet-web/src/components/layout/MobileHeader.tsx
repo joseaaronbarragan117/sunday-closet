@@ -1,8 +1,8 @@
 // src/components/layout/MobileHeader.tsx
 "use client";
 
-import React, { useState } from "react";
-import { Search, User, Heart, ShoppingBag, Menu, Plus, Minus } from "lucide-react";
+import React from "react";
+import { Search, User, Heart, ShoppingBag, Menu } from "lucide-react";
 import { useCartStore } from "@/lib/store/cartStore";
 import { useFavoritesStore } from "@/lib/store/favoritesStore";
 
@@ -19,47 +19,31 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   onFavoritesClick,
   isSearchOpen,
 }) => {
-  const [promoExpanded, setPromoExpanded] = useState(false);
   const cartCount = useCartStore((s) => s.count());
   const favCount = useFavoritesStore((s) => s.count());
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white safe-top border-b border-[#EAEAEA]">
-      {/* Top Red Promo Ribbon (exact as Screenshot 2) */}
-      <div
-        onClick={() => setPromoExpanded(!promoExpanded)}
-        className="w-full bg-white border-b border-[#EAEAEA] px-4 py-2 flex items-center justify-between text-xs cursor-pointer select-none"
-      >
-        <span className="text-[#E50010] font-bold tracking-tight text-[11px] sm:text-xs">
-          -15% EN TODO EL DROP VINTAGE
-        </span>
-        <button
-          aria-label="Ver detalles de promoción"
-          className="text-[#E50010] hover:opacity-80 p-0.5"
-        >
-          {promoExpanded ? <Minus className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-        </button>
-      </div>
-
-      {promoExpanded && (
-        <div className="bg-[#F4F4F4] px-4 py-2.5 text-[11px] text-[#555555] border-b border-[#EAEAEA] animate-in slide-in-from-top duration-150">
-          Aplica automáticamente en tu apartado por WhatsApp o compra en línea. Piezas únicas curadas de segunda selección.
-        </div>
-      )}
-
-      {/* Main Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5">
-        {/* Left: H&M-styled bold brand mark */}
-        <div className="flex items-center">
-          <span className="font-black italic text-2xl tracking-tighter text-[#E50010] font-sans">
-            SUNDAY
-          </span>
-          <span className="font-bold text-xs tracking-widest text-black ml-1.5 uppercase -mb-1">
-            Clóset
-          </span>
+    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md safe-top border-b border-[#EAEAEA]">
+      <div className="w-full max-w-5xl mx-auto flex items-center justify-between px-5 sm:px-6 py-3">
+        {/* Left: Authentic Sunday Clóset Logo */}
+        <div className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Sunday Clóset"
+            className="w-9 h-9 rounded-full object-cover shadow-xs ring-1 ring-black/5"
+          />
+          <div className="flex flex-col">
+            <span className="font-serif font-bold text-base sm:text-lg tracking-tight text-black leading-none">
+              Sunday Clóset
+            </span>
+            <span className="text-[9px] tracking-[0.2em] text-[#767676] uppercase font-medium mt-0.5">
+              Curaduría Circular
+            </span>
+          </div>
         </div>
 
-        {/* Right: Clean action icons (exact as Screenshot 2) */}
+        {/* Right: Clean action icons with comfortable spacing */}
         <div className="flex items-center gap-4 text-black">
           <button
             onClick={onSearchClick}
@@ -70,7 +54,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           </button>
 
           <button
-            onClick={() => alert("Sunday Clóset — Tienda Móvil oficial")}
+            onClick={() => alert("Sunday Clóset — Piezas únicas seleccionadas a mano.")}
             aria-label="Cuenta"
             className="p-1 hover:opacity-70 transition-opacity"
           >
@@ -84,7 +68,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           >
             <Heart className="w-5 h-5 stroke-[1.8]" />
             {favCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-[#E50010] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 bg-[#E50010] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                 {favCount}
               </span>
             )}
@@ -97,18 +81,10 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           >
             <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-black text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 bg-black text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                 {cartCount}
               </span>
             )}
-          </button>
-
-          <button
-            onClick={onSearchClick}
-            aria-label="Menú"
-            className="p-1 hover:opacity-70 transition-opacity"
-          >
-            <Menu className="w-5 h-5 stroke-[1.8]" />
           </button>
         </div>
       </div>

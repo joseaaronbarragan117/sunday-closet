@@ -68,6 +68,7 @@ export function mapItemToProduct(item: any): Product {
     talla: item.size || item.talla || 'M',
     color: item.color || item.colour || undefined,
     precio: Number(item.pricePublished) || Number(item.priceWeb) || Number(item.priceSunday) || Number(item.precio) || 0,
+    precioOriginal: item.precioOriginal ? Number(item.precioOriginal) : (item.priceOriginal ? Number(item.priceOriginal) : (item.descuento ? Math.round((Number(item.pricePublished) || Number(item.precio) || 0) * (1 + Number(item.descuento)/100)) : undefined)),
     estado: isAvailable ? 'disponible' : 'vendido',
     categoriaRopa,
     descripcion: item.descripcion || `${rawType} de ${rawBrand}. Talla ${item.size || item.talla || 'Única'}, color ${item.color || 'exclusivo'}. Prenda única seleccionada para Sunday Clóset.`,

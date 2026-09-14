@@ -29,7 +29,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const inCart = isInCart(product.id);
   const isAvailable = product.estado === "disponible";
   const photoUrl = formatDriveImageUrl(product.imagenUrl);
-  const originalPrice = Math.round(product.precio * 1.18);
+  const hasDiscount = Boolean(product.precioOriginal && product.precioOriginal > product.precio);
+  const discountPercent = hasDiscount
+    ? Math.round((1 - product.precio / product.precioOriginal!) * 100)
+    : 0;
 
   const handleWhatsApp = () => {
     window.open(createProductWhatsAppUrl(product), "_blank");
@@ -100,9 +103,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             )}
 
             <div className="absolute bottom-0 left-0 z-10">
-              <span className="bg-black text-white text-xs font-bold px-3 py-1.5 inline-block uppercase tracking-wider">
-                {isAvailable ? "-15%" : "AGOTADO"}
-              </span>
+              {!isAvailable ? (
+                <span className="bg-black text-white text-xs font-bold px-3 py-1.5 inline-block uppercase tracking-wider">
+                  AGOTADO
+                </span>
+              ) : hasDiscount ? (
+                <span className="bg-black text-white text-xs font-bold px-3 py-1.5 inline-block uppercase tracking-wider">
+                  -{discountPercent}%
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -117,12 +126,20 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </h2>
 
             <div className="flex items-baseline gap-2 pt-1">
-              <span className="text-lg font-bold text-[#E50010]">
-                {formatPrice(product.precio)}
-              </span>
-              <span className="text-xs text-[#767676] line-through font-normal">
-                {formatPrice(originalPrice)}
-              </span>
+              {hasDiscount ? (
+                <>
+                  <span className="text-lg font-bold text-[#E50010]">
+                    {formatPrice(product.precio)}
+                  </span>
+                  <span className="text-xs text-[#767676] line-through font-normal">
+                    {formatPrice(product.precioOriginal!)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-lg font-bold text-black">
+                  {formatPrice(product.precio)}
+                </span>
+              )}
             </div>
           </div>
 
