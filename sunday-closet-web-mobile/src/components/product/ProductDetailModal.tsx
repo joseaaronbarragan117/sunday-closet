@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Heart, MessageCircle, ShoppingBag, Check, ShieldCheck, Sparkles, Tag } from "lucide-react";
+import { X, Heart, MessageCircle, ShoppingBag, Check } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { formatPrice } from "@/lib/utils/format";
 import { formatDriveImageUrl } from "@/lib/imageUrl";
@@ -29,6 +29,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const inCart = isInCart(product.id);
   const isAvailable = product.estado === "disponible";
   const photoUrl = formatDriveImageUrl(product.imagenUrl);
+  const originalPrice = Math.round(product.precio * 1.18);
 
   const handleWhatsApp = () => {
     window.open(createProductWhatsAppUrl(product), "_blank");
@@ -41,185 +42,164 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-lg max-h-[92vh] bg-[#F7F6F2] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300"
+        className="w-full max-w-lg max-h-[92vh] bg-white flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Sticky Bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5E3DD] bg-white/90 backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#2E7D32]" />
-            <span className="text-[11px] font-mono uppercase tracking-widest text-[#8A8880]">
-              SKU: {product.id}
-            </span>
-          </div>
+        {/* Top Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#EAEAEA]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#767676]">
+            SKU: {product.id}
+          </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => toggleFavorite(product)}
-              className="p-2 rounded-full bg-[#F7F6F2] border border-[#E5E3DD] active:scale-95 transition-transform"
+              className="p-1 text-black hover:opacity-70 active:scale-90 transition-all"
             >
               <Heart
-                className={`w-4 h-4 ${
-                  favorite ? "fill-rose-500 text-rose-500" : "text-[#5A5852]"
+                className={`w-5 h-5 ${
+                  favorite ? "fill-[#E50010] text-[#E50010]" : "text-black"
                 }`}
               />
             </button>
 
             <button
               onClick={onClose}
-              className="p-2 rounded-full bg-[#F7F6F2] hover:bg-[#E5E3DD] text-[#1F1F1F] border border-[#E5E3DD] active:scale-95"
+              className="p-1 text-black hover:opacity-70 active:scale-90 transition-all"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5 stroke-[2]" />
             </button>
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* Main Image */}
-          <div className="relative w-full aspect-3/4 rounded-2xl overflow-hidden bg-[#EFEDE8] border border-[#E5E3DD]">
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* Main Photo */}
+          <div className="relative w-full aspect-3/4 bg-[#F4F4F4] overflow-hidden">
             {!imgError && photoUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={photoUrl}
                 alt={product.nombre || product.tipo}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-top"
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-[#8A8880]">
+              <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-[#767676]">
                 <span className="text-4xl mb-2">👗</span>
-                <span className="text-xs uppercase tracking-wider font-light">
-                  Sunday Clóset Curaduría
+                <span className="text-xs uppercase tracking-wider font-bold">
+                  Sunday Clóset
                 </span>
               </div>
             )}
 
-            <div className="absolute top-3 left-3">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/95 backdrop-blur-xs text-[#1F1F1F] shadow-xs">
-                <Sparkles className="w-3 h-3 text-[#C2A78C]" />
-                Pieza Única
+            <div className="absolute bottom-0 left-0 z-10">
+              <span className="bg-black text-white text-xs font-bold px-3 py-1.5 inline-block uppercase tracking-wider">
+                {isAvailable ? "-15%" : "AGOTADO"}
               </span>
             </div>
           </div>
 
-          {/* Title and Price */}
+          {/* Titles & Prices */}
           <div className="space-y-1">
-            <span className="text-xs font-semibold tracking-widest text-[#C2A78C] uppercase">
-              {product.marca}
+            <span className="text-xs text-[#767676] uppercase tracking-wider font-semibold">
+              {product.marca || "SUNDAY CURATED"}
             </span>
-            <h2 className="font-display font-medium text-2xl text-[#1F1F1F] leading-snug">
+
+            <h2 className="text-base font-bold text-black uppercase tracking-tight">
               {product.nombre || product.tipo}
             </h2>
-            <div className="pt-2 flex items-baseline gap-3">
-              <span className="font-display font-bold text-2xl text-[#1F1F1F]">
+
+            <div className="flex items-baseline gap-2 pt-1">
+              <span className="text-lg font-bold text-[#E50010]">
                 {formatPrice(product.precio)}
               </span>
-              <span className="text-[11px] text-[#8A8880] uppercase tracking-wider">
-                Segunda Selección
+              <span className="text-xs text-[#767676] line-through font-normal">
+                {formatPrice(originalPrice)}
               </span>
             </div>
           </div>
 
-          {/* Attributes Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <div className="p-3 bg-white rounded-xl border border-[#E5E3DD]">
-              <span className="block text-[10px] text-[#8A8880] uppercase tracking-wider">
-                Talla
+          {/* Garment Details Grid */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-3 bg-[#F4F4F4] border border-[#EAEAEA]">
+              <span className="block text-[10px] text-[#767676] uppercase font-bold tracking-wider">
+                TALLA
               </span>
-              <span className="font-semibold text-sm text-[#1F1F1F]">
-                {product.talla || "Única"}
-              </span>
+              <span className="font-bold text-black">{product.talla || "ÚNICA"}</span>
             </div>
 
-            <div className="p-3 bg-white rounded-xl border border-[#E5E3DD]">
-              <span className="block text-[10px] text-[#8A8880] uppercase tracking-wider">
-                Color
+            <div className="p-3 bg-[#F4F4F4] border border-[#EAEAEA]">
+              <span className="block text-[10px] text-[#767676] uppercase font-bold tracking-wider">
+                COLOR
               </span>
-              <span className="font-semibold text-sm text-[#1F1F1F]">
-                {product.color || "Variado"}
-              </span>
+              <span className="font-bold text-black">{product.color || "VARIADO"}</span>
             </div>
 
-            <div className="p-3 bg-white rounded-xl border border-[#E5E3DD]">
-              <span className="block text-[10px] text-[#8A8880] uppercase tracking-wider">
-                Categoría
+            <div className="p-3 bg-[#F4F4F4] border border-[#EAEAEA]">
+              <span className="block text-[10px] text-[#767676] uppercase font-bold tracking-wider">
+                TIPO
               </span>
-              <span className="font-semibold text-sm text-[#1F1F1F] capitalize">
-                {product.tipo}
-              </span>
+              <span className="font-bold text-black uppercase">{product.tipo}</span>
             </div>
 
-            <div className="p-3 bg-white rounded-xl border border-[#E5E3DD]">
-              <span className="block text-[10px] text-[#8A8880] uppercase tracking-wider">
-                Estado
+            <div className="p-3 bg-[#F4F4F4] border border-[#EAEAEA]">
+              <span className="block text-[10px] text-[#767676] uppercase font-bold tracking-wider">
+                ESTADO
               </span>
-              <span className="font-semibold text-sm text-[#2E7D32] capitalize">
-                {product.estado}
-              </span>
+              <span className="font-bold text-black uppercase">{product.estado}</span>
             </div>
           </div>
 
           {/* Description */}
           {product.descripcion && (
-            <div className="p-4 bg-white rounded-2xl border border-[#E5E3DD] space-y-1">
-              <h4 className="text-xs font-semibold text-[#1F1F1F] uppercase tracking-wider">
-                Detalles de la Prenda
+            <div className="p-4 border border-[#EAEAEA] bg-[#F4F4F4] space-y-1">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-black">
+                DESCRIPCIÓN
               </h4>
-              <p className="text-xs text-[#5A5852] font-light leading-relaxed">
+              <p className="text-xs text-[#555555] leading-relaxed">
                 {product.descripcion}
               </p>
             </div>
           )}
 
-          {/* Sustainable Fashion Notice */}
-          <div className="p-3.5 bg-[#EFEDE8] rounded-2xl border border-[#E5E3DD] flex items-start gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-[#8C6D4F] shrink-0 mt-0.5" />
-            <p className="text-[11px] text-[#5A5852] font-light leading-relaxed">
-              Cada prenda de Sunday Clóset es única. Al confirmar tu compra o apartado, se retira de la circulación para garantizar tu exclusividad.
-            </p>
+          <div className="p-3 bg-neutral-100 text-[11px] text-[#767676] leading-snug">
+            * Cada prenda de Sunday Clóset es única. Si apartas esta pieza, se retira inmediatamente del catálogo para garantizar tu exclusividad.
           </div>
         </div>
 
-        {/* Bottom Floating Actions */}
-        <div className="p-4 bg-white border-t border-[#E5E3DD] safe-bottom space-y-2">
+        {/* Bottom Actions */}
+        <div className="p-4 border-t border-[#EAEAEA] safe-bottom bg-white space-y-2">
           {isAvailable ? (
             <div className="flex items-center gap-2">
               <button
                 onClick={handleWhatsApp}
-                className="flex-1 py-3.5 px-4 rounded-2xl bg-[#25D366] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-md shadow-[#25D366]/20 active:scale-98 transition-transform"
+                className="flex-1 py-4 text-center text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-neutral-900 active:opacity-90 flex items-center justify-center gap-2"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
-                <span>Apartar por WhatsApp</span>
+                <span>APARTAR POR WHATSAPP</span>
               </button>
 
               <button
                 onClick={handleAddToCart}
-                className={`py-3.5 px-5 rounded-2xl font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 ${
+                className={`py-4 px-5 text-xs font-bold uppercase tracking-widest border border-black transition-all ${
                   inCart
-                    ? "bg-[#2E7D32] text-white"
-                    : "bg-[#1F1F1F] text-white hover:bg-black"
+                    ? "bg-[#2E7D32] border-[#2E7D32] text-white"
+                    : "bg-white text-black hover:bg-[#F4F4F4]"
                 }`}
               >
-                {inCart ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>En Bolsa</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>Añadir</span>
-                  </>
-                )}
+                {inCart ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
               </button>
             </div>
           ) : (
-            <div className="w-full py-3.5 text-center bg-neutral-200 text-neutral-500 rounded-2xl text-xs font-semibold">
-              Esta prenda ya fue adquirida
+            <div className="w-full py-4 text-center bg-[#EAEAEA] text-[#767676] text-xs font-bold uppercase tracking-wider">
+              ESTA PRENDA YA FUE ADQUIRIDA
             </div>
           )}
         </div>

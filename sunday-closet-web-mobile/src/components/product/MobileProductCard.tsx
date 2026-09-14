@@ -2,159 +2,116 @@
 "use client";
 
 import React, { useState } from "react";
-import { Heart, MessageCircle, ShoppingBag, Check } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { formatPrice } from "@/lib/utils/format";
 import { formatDriveImageUrl } from "@/lib/imageUrl";
 import { useFavoritesStore } from "@/lib/store/favoritesStore";
-import { useCartStore } from "@/lib/store/cartStore";
-import { createProductWhatsAppUrl } from "@/lib/utils/whatsapp";
 
 interface MobileProductCardProps {
   product: Product;
   onOpenDetail: (product: Product) => void;
+  isSingleColumn?: boolean;
 }
 
 export const MobileProductCard: React.FC<MobileProductCardProps> = ({
   product,
   onOpenDetail,
+  isSingleColumn = false,
 }) => {
   const [imgError, setImgError] = useState(false);
   const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { addItem, isInCart } = useCartStore();
 
   const favorite = isFavorite(product.id);
-  const inCart = isInCart(product.id);
   const isAvailable = product.estado === "disponible";
-
   const photoUrl = formatDriveImageUrl(product.imagenUrl);
 
-  const handleWhatsAppReserve = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(createProductWhatsAppUrl(product), "_blank");
-  };
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isAvailable && !inCart) {
-      addItem(product);
-    }
-  };
+  // Calculate reference original price (~18% higher for the -15% discount badge style of H&M)
+  const originalPrice = Math.round(product.precio * 1.18);
 
   return (
     <div
       onClick={() => onOpenDetail(product)}
-      className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#E5E3DD] shadow-xs cursor-pointer pressable"
+      className="group flex flex-col bg-white cursor-pointer select-none pb-4"
     >
-      {/* Product Image Media Container */}
-      <div className="relative w-full aspect-3/4 bg-[#EFEDE8] overflow-hidden">
+      {/* Product Image Media Container (exact as Screenshot 3 & 4) */}
+      <div className={`relative w-full ${isSingleColumn ? "aspect-3/4 max-h-[500px]" : "aspect-3/4"} bg-[#F4F4F4] overflow-hidden`}>
         {!imgError && photoUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={photoUrl}
             alt={product.nombre || product.tipo}
             referrerPolicy="no-referrer"
-            className={`w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 ${
+            className={`w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02] ${
               !isAvailable ? "grayscale contrast-125 opacity-70" : ""
             }`}
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-[#8A8880] bg-[#EAE7E1]">
+          <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-[#767676] bg-[#F4F4F4]">
             <span className="text-3xl mb-1">👗</span>
-            <span className="text-[11px] uppercase tracking-wider font-light">
+            <span className="text-[10px] uppercase tracking-wider font-bold">
               Sunday Clóset
             </span>
           </div>
         )}
 
-        {/* Top Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
-          {isAvailable ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-white/90 backdrop-blur-xs text-[#1F1F1F] shadow-xs">
-              Única pieza
-            </span>
-          ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-black/85 text-white">
-              Agotada
-            </span>
-          )}
+        {/* Bottom-left Black Tag Pill (exact as Screenshots 3 & 4: "-15%") */}
+        <div className="absolute bottom-0 left-0 z-10">
+          <span className="bg-black text-white text-[10px] sm:text-[11px] font-bold px-2 py-1 inline-block uppercase tracking-wider">
+            {isAvailable ? "-15%" : "AGOTADO"}
+          </span>
         </div>
 
-        {/* Top Right Favorite Button */}
+        {/* Bottom-right Floating Heart Outline (exact as Screenshots 3 & 4) */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             toggleFavorite(product);
           }}
           aria-label={favorite ? "Quitar de favoritos" : "Guardar en favoritos"}
-          className="absolute top-2 right-2 z-10 p-2 rounded-full bg-white/90 backdrop-blur-xs border border-white/40 shadow-xs active:scale-90 transition-transform"
+          className="absolute bottom-1 right-1 z-10 p-2 text-black hover:opacity-80 active:scale-90 transition-all"
         >
           <Heart
-            className={`w-4 h-4 transition-colors ${
-              favorite ? "fill-rose-500 text-rose-500" : "text-[#5A5852]"
+            className={`w-5 h-5 transition-colors ${
+              favorite
+                ? "fill-[#E50010] text-[#E50010]"
+                : "text-black fill-none stroke-[1.7]"
             }`}
           />
         </button>
-
-        {/* Size Badge Bottom Overlay */}
-        <div className="absolute bottom-2 left-2 z-10">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#1F1F1F]/80 backdrop-blur-xs text-white">
-            Talla {product.talla}
-          </span>
-        </div>
       </div>
 
-      {/* Card Body */}
-      <div className="p-3 flex flex-col justify-between flex-1 space-y-2">
-        <div>
-          <div className="flex items-center justify-between text-[11px] text-[#8A8880] uppercase tracking-wider font-light">
-            <span className="truncate max-w-[110px]">{product.marca}</span>
-            {product.color && <span className="truncate">{product.color}</span>}
-          </div>
+      {/* Card Info Below Image (exact typography & spacing as Screenshots 3 & 4) */}
+      <div className="pt-2 space-y-0.5">
+        {/* Sub-brand / Line */}
+        <span className="block text-[10px] text-[#767676] uppercase tracking-wider font-semibold">
+          {product.marca || "SUNDAY CURATED"}
+        </span>
 
-          <h3 className="font-display font-medium text-base text-[#1F1F1F] line-clamp-1 mt-0.5">
-            {product.nombre || product.tipo}
-          </h3>
+        {/* Product Title in Uppercase Bold */}
+        <h3 className="text-xs font-bold text-black uppercase tracking-tight line-clamp-1">
+          {product.nombre || product.tipo}
+        </h3>
+
+        {/* Price Row: Red Offer Price + Grey Original Crossed-Out Price */}
+        <div className="flex items-baseline gap-1.5 pt-0.5">
+          <span className="text-xs sm:text-sm font-bold text-[#E50010]">
+            {formatPrice(product.precio)}
+          </span>
+          <span className="text-[11px] text-[#767676] line-through font-normal">
+            {formatPrice(originalPrice)}
+          </span>
         </div>
 
-        {/* Price & Quick Actions */}
-        <div className="pt-1 border-t border-[#F5F4F0] flex items-center justify-between">
-          <div>
-            <span className="font-display font-bold text-base text-[#1F1F1F]">
-              {formatPrice(product.precio)}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {isAvailable && (
-              <>
-                <button
-                  onClick={handleAddToCart}
-                  title="Añadir a la bolsa"
-                  className={`p-2 rounded-xl transition-all ${
-                    inCart
-                      ? "bg-[#2E7D32] text-white"
-                      : "bg-[#EFEDE8] text-[#1F1F1F] hover:bg-[#E5E3DD] active:scale-95"
-                  }`}
-                >
-                  {inCart ? (
-                    <Check className="w-3.5 h-3.5" />
-                  ) : (
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                  )}
-                </button>
-
-                <button
-                  onClick={handleWhatsAppReserve}
-                  title="Apartar por WhatsApp"
-                  className="p-2 rounded-xl bg-[#25D366]/15 text-[#128C7E] hover:bg-[#25D366]/25 active:scale-95 transition-all"
-                >
-                  <MessageCircle className="w-3.5 h-3.5 fill-[#25D366]" />
-                </button>
-              </>
-            )}
-          </div>
+        {/* Color / Variant Swatches (exact as Screenshot 4: ■ ■ ■ +2) */}
+        <div className="flex items-center gap-1 pt-1">
+          <span className="w-2.5 h-2.5 bg-black inline-block border border-neutral-300" />
+          <span className="w-2.5 h-2.5 bg-[#8B7355] inline-block border border-neutral-300" />
+          <span className="w-2.5 h-2.5 bg-[#EAEAEA] inline-block border border-neutral-300" />
+          <span className="text-[10px] text-[#767676] font-medium ml-0.5">
+            +Talla {product.talla || "U"}
+          </span>
         </div>
       </div>
     </div>
