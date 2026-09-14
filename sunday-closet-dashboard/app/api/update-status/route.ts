@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getGoogleSheetsClient, getSpreadsheetId } from '@/lib/googleSheets';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
+
 export async function PATCH(request: Request) {
   try {
     const spreadsheetId = getSpreadsheetId();

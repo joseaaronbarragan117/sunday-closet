@@ -4,6 +4,16 @@ import { InventoryItem, ItemStyle, ItemCondition } from '@/types/inventory';
 import { calculatePrices } from '@/lib/priceCalculator';
 import { formatDriveImageUrl } from '@/lib/imageUrl';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
+
 // Fallback Mock Inventory Data for UI verification
 const MOCK_INVENTORY: InventoryItem[] = [
   {

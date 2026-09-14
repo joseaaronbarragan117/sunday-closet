@@ -11,6 +11,7 @@ import { PosModal } from '@/components/modals/PosModal';
 import { InventoryItem, NewItemFormData, ScheduleDropPayload } from '@/types/inventory';
 import { Tag, Eye, EyeOff, Sparkles, Filter, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { getApiBase } from '@/lib/apiConfig';
 
 function sanitizeItems(rawItems: any[]): InventoryItem[] {
   if (!Array.isArray(rawItems)) return [];
@@ -83,7 +84,7 @@ export default function DashboardPage() {
       setIsRefreshing(true);
       setLoadError(null);
 
-      const res = await fetch('/api/inventory', {
+      const res = await fetch(`${getApiBase()}/api/inventory`, {
         signal: controller.signal,
         cache: 'no-store',
       });
@@ -164,7 +165,7 @@ export default function DashboardPage() {
     );
 
     try {
-      const res = await fetch('/api/update-status', {
+      const res = await fetch(`${getApiBase()}/api/update-status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sku, visibleInWeb: newVisibility }),
@@ -213,7 +214,7 @@ export default function DashboardPage() {
     }
 
     try {
-      const res = await fetch(`/api/inventory?sku=${encodeURIComponent(sku)}`, {
+      const res = await fetch(`${getApiBase()}/api/inventory?sku=${encodeURIComponent(sku)}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -241,7 +242,7 @@ export default function DashboardPage() {
   // Handle Adding New Item
   const handleAddItem = async (formData: NewItemFormData) => {
     try {
-      const res = await fetch('/api/inventory', {
+      const res = await fetch(`${getApiBase()}/api/inventory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -265,7 +266,7 @@ export default function DashboardPage() {
   // Handle Drop Scheduling
   const handleScheduleDrop = async (payload: ScheduleDropPayload) => {
     try {
-      const res = await fetch('/api/schedule-drop', {
+      const res = await fetch(`${getApiBase()}/api/schedule-drop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -301,7 +302,7 @@ export default function DashboardPage() {
   const handleUpdateBanner = async (bannerUrl: string) => {
     try {
       setIsUpdatingBanner(true);
-      const res = await fetch('/api/banner', {
+      const res = await fetch(`${getApiBase()}/api/banner`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bannerUrl }),

@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getGoogleSheetsClient, getSpreadsheetId } from "@/lib/googleSheets";
 
 export interface SaleItemPayload {
@@ -13,6 +13,16 @@ export interface ProcessSalePayload {
   items: SaleItemPayload[];
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
   try {
     const spreadsheetId = getSpreadsheetId();
@@ -24,7 +34,7 @@ export async function POST(request: Request) {
     if (!items || items.length === 0) {
       return NextResponse.json(
         { success: false, error: "No se proporcionaron prendas para registrar la venta" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -90,12 +100,12 @@ export async function POST(request: Request) {
       channel,
       paymentMethod,
       date: today,
-    });
+    }, { headers: corsHeaders });
   } catch (error: any) {
     console.error("[API Sales POST] Error:", error);
     return NextResponse.json(
       { success: false, error: error?.message || "Error al procesar la venta" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

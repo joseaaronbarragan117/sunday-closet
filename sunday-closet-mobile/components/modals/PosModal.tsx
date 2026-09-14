@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { InventoryItem } from "@/types/inventory";
 import { formatDriveImageUrl } from "@/lib/imageUrl";
 import { DriveImage } from "@/components/common/DriveImage";
+import { getApiBase } from "@/lib/apiConfig";
 import {
   Store,
   X,
@@ -141,7 +142,7 @@ export const PosModal: React.FC<PosModalProps> = ({
         })),
       };
 
-      const res = await fetch("/api/sales", {
+      const res = await fetch(`${getApiBase()}/api/sales`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

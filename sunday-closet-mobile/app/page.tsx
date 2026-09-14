@@ -1,31 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { InventoryItem, NewItemFormData } from '@/types/inventory';
+import React, { useState, useEffect, useTransition } from 'react';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Topbar } from '@/components/layout/Topbar';
+import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { AddItemModal } from '@/components/modals/AddItemModal';
-import { PosModal } from '@/components/modals/PosModal';
+import { DropSchedulerModal } from '@/components/modals/DropSchedulerModal';
 import { BannerModal } from '@/components/modals/BannerModal';
-import { DriveImage } from '@/components/common/DriveImage';
-import { ItemStatusBadge } from '@/components/inventory/ItemStatusBadge';
-import { IosToggle } from '@/components/inventory/IosToggle';
+import { PosModal } from '@/components/modals/PosModal';
+import { InventoryItem, NewItemFormData, ScheduleDropPayload } from '@/types/inventory';
+import { Tag, Eye, EyeOff, Sparkles, Filter, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import {
-  Search,
-  RotateCw,
-  Plus,
-  ShoppingBag,
-  Image as ImageIcon,
-  Tag,
-  Eye,
-  EyeOff,
-  Trash2,
-  Loader2,
-  Calendar,
-  Layers,
-  Sparkles,
-  ChevronDown,
-  ChevronUp
-} from 'lucide-react';
+import { getApiBase } from '@/lib/apiConfig';
 
 function sanitizeItems(rawItems: any[]): InventoryItem[] {
   if (!Array.isArray(rawItems)) return [];
@@ -39,8 +25,8 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
       size: String(item.size || 'M'),
       color: String(item.color || ''),
       brand: String(item.brand || ''),
-      style: item.style || 'Vintage',
-      condition: item.condition || 'Nuevo c/etiqueta',
+      style: (item.style || 'Vintage'),
+      condition: (item.condition || 'Nuevo c/etiqueta'),
       cost: Number(item.cost) || 0,
       priceSunday: Number(item.priceSunday) || 0,
       priceWeb: Number(item.priceWeb) || 0,
@@ -48,7 +34,7 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
       pricePaca: Number(item.pricePaca) || 0,
       pricePublished: Number(item.pricePublished) || 0,
       visibleInWeb: Boolean(item.visibleInWeb),
-      status: item.status || 'Disponible',
+      status: (item.status || 'Disponible'),
       scheduledDropDate: item.scheduledDropDate ? String(item.scheduledDropDate) : undefined,
       dropName: item.dropName ? String(item.dropName) : undefined,
     }))
@@ -59,158 +45,217 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
     });
 }
 
-function formatPrice(val: any): string {
-  const num = Number(val);
-  if (isNaN(num)) return '0';
-  return num.toLocaleString('es-MX');
-}
-
-export default function MobileDashboardPage() {
+export default function DashboardPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterVisible, setFilterVisible] = useState<'all' | 'visible' | 'hidden'>('all');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'add' | 'schedule' | 'banner' | 'pos'>('inventory');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [isPosModalOpen, setIsPosModalOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUpdatingBanner, setIsUpdatingBanner] = useState(false);
   const [updatingSku, setUpdatingSku] = useState<string | null>(null);
   const [deletingSku, setDeletingSku] = useState<string | null>(null);
-  const [expandedSku, setExpandedSku] = useState<string | null>(null);
+  const [filterVisible, setFilterVisible] = useState<'all' | 'visible' | 'hidden'>('all');
 
-  // Modals
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isPosModalOpen, setIsPosModalOpen] = useState(false);
-  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Initial load from cache or API
-  useEffect(() => {
+  // Clear cache and force fresh reload
+  const handleHardReset = () => {
     try {
-      const cached = localStorage.getItem('sunday_inventory_cache_mobile');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setItems(sanitizeItems(parsed));
-          setIsLoading(false);
-        }
-      }
+      localStorage.removeItem('sunday_inventory_cache');
     } catch {
       // ignore
     }
+    setItems([]);
+    setIsLoading(true);
     fetchInventory();
-  }, []);
+  };
 
+  // Fetch Inventory Data with Timeout & Local Cache (Stale-While-Revalidate)
   const fetchInventory = async () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
       setIsRefreshing(true);
-      const res = await fetch('/api/inventory', {
+      setLoadError(null);
+
+      const res = await fetch(`${getApiBase()}/api/inventory`, {
         signal: controller.signal,
         cache: 'no-store',
       });
+
       clearTimeout(timeoutId);
 
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
       const data = await res.json();
       if (data.items && Array.isArray(data.items)) {
         const clean = sanitizeItems(data.items);
         setItems(clean);
         try {
-          localStorage.setItem('sunday_inventory_cache_mobile', JSON.stringify(clean));
+          localStorage.setItem('sunday_inventory_cache', JSON.stringify(clean));
         } catch {
-          // ignore
+          // Ignore localStorage errors in private mode
         }
       }
     } catch (err: any) {
-      console.warn('[Mobile] Error fetching inventory:', err?.message || err);
+      console.error('Error fetching inventory:', err);
+      const isTimeout = err.name === 'AbortError';
+      const msg = isTimeout 
+        ? 'Tiempo de espera agotado al consultar Google Sheets. Mostrando datos disponibles.' 
+        : 'No se pudo sincronizar en vivo con Google Sheets.';
+      setLoadError(msg);
+
+      // Try reading from localStorage if current items are empty
+      try {
+        const cached = localStorage.getItem('sunday_inventory_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const clean = sanitizeItems(parsed);
+          if (clean.length > 0) {
+            setItems(clean);
+          }
+        }
+      } catch {
+        // ignore
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
       setIsRefreshing(false);
     }
   };
 
-  // Toggle visible in web
-  const handleToggleVisibility = async (sku: string, currentStatus: boolean) => {
-    const nextStatus = !currentStatus;
-    setItems((prev) =>
-      prev.map((it) => (it.sku === sku ? { ...it, visibleInWeb: nextStatus } : it))
-    );
+  useEffect(() => {
+    // Initial quick load from local cache if available to prevent flash/waiting
+    try {
+      const cached = localStorage.getItem('sunday_inventory_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const clean = sanitizeItems(parsed);
+        if (clean.length > 0) {
+          setItems(clean);
+          setIsLoading(false);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    fetchInventory();
+  }, []);
+
+  // Handle Toggle Switch Visibility (VERDADERO / FALSO)
+  const handleToggleVisibility = async (sku: string, currentVisibility: boolean) => {
+    const newVisibility = !currentVisibility;
     setUpdatingSku(sku);
 
+    // Optimistic UI update
+    setItems((prev) =>
+      prev.map((item) =>
+        item.sku === sku ? { ...item, visibleInWeb: newVisibility } : item
+      )
+    );
+
     try {
-      const res = await fetch('/api/update-status', {
+      const res = await fetch(`${getApiBase()}/api/update-status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku, visibleInWeb: nextStatus }),
+        body: JSON.stringify({ sku, visibleInWeb: newVisibility }),
       });
 
       if (!res.ok) {
-        throw new Error('API returned non-200');
+        // Rollback on failure
+        setItems((prev) =>
+          prev.map((item) =>
+            item.sku === sku ? { ...item, visibleInWeb: currentVisibility } : item
+          )
+        );
+        alert('Error actualizando el Google Sheet');
       }
     } catch (err) {
-      console.error('Error toggling visibility:', err);
-      // Revert on error
+      console.error('Toggle error:', err);
+      // Rollback
       setItems((prev) =>
-        prev.map((it) => (it.sku === sku ? { ...it, visibleInWeb: currentStatus } : it))
+        prev.map((item) =>
+          item.sku === sku ? { ...item, visibleInWeb: currentVisibility } : item
+        )
       );
-      alert('No se pudo actualizar la visibilidad en Google Sheets.');
     } finally {
       setUpdatingSku(null);
     }
   };
 
-  // Delete item with row compacting
+  // Handle Deleting an Item from Google Sheets and Dashboard
   const handleDeleteItem = async (sku: string) => {
     const itemToDelete = items.find((it) => it.sku === sku);
-    const itemName = itemToDelete ? `"${itemToDelete.type}" (${sku})` : sku;
+    const itemName = itemToDelete ? `${itemToDelete.sku} (${itemToDelete.type})` : sku;
 
-    const confirmed = window.confirm(
-      `¿Deseas eliminar permanentemente la prenda ${itemName}?\n\nEsta acción eliminará la prenda del dashboard y de Google Sheets, y las filas siguientes se reordenarán automáticamente hacia arriba.`
-    );
+    const confirmed = window.confirm(`¿Estás seguro de que deseas eliminar permanentemente la prenda "${itemName}" del inventario y de Google Sheets?`);
     if (!confirmed) return;
 
     setDeletingSku(sku);
+
+    // Optimistic UI update: Remove immediately from list
+    const previousItems = [...items];
+    const updatedList = items.filter((it) => it.sku !== sku);
+    setItems(updatedList);
     try {
-      const res = await fetch(`/api/inventory?sku=${encodeURIComponent(sku)}`, {
+      localStorage.setItem('sunday_inventory_cache', JSON.stringify(updatedList));
+    } catch {
+      // ignore
+    }
+
+    try {
+      const res = await fetch(`${getApiBase()}/api/inventory?sku=${encodeURIComponent(sku)}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const data = await res.json();
-      if (data.success) {
-        setItems((prev) => prev.filter((it) => it.sku !== sku));
-        try {
-          const updated = items.filter((it) => it.sku !== sku);
-          localStorage.setItem('sunday_inventory_cache_mobile', JSON.stringify(updated));
-        } catch {
-          // ignore
-        }
-      } else {
-        alert(`Error al eliminar: ${data.error || 'No se pudo eliminar de Google Sheets'}`);
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Error al eliminar de Google Sheets');
       }
-    } catch (err) {
-      console.error('Error deleting item:', err);
-      alert('Error de conexión al intentar eliminar la prenda.');
+    } catch (err: any) {
+      console.error('Delete item error:', err);
+      // Rollback on error
+      setItems(previousItems);
+      try {
+        localStorage.setItem('sunday_inventory_cache', JSON.stringify(previousItems));
+      } catch {
+        // ignore
+      }
+      alert(`No se pudo eliminar la prenda: ${err.message || 'Error desconocido'}`);
     } finally {
       setDeletingSku(null);
     }
   };
 
-  // Handle Add Item
-  const handleAddItem = async (newItem: NewItemFormData) => {
+  // Handle Adding New Item
+  const handleAddItem = async (formData: NewItemFormData) => {
     try {
-      const res = await fetch('/api/inventory', {
+      const res = await fetch(`${getApiBase()}/api/inventory`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
+
       if (data.success && data.item) {
         setItems((prev) => [data.item, ...prev]);
         setIsAddModalOpen(false);
-        fetchInventory();
+        setActiveTab('inventory');
       } else {
-        alert('Hubo un problema al guardar la prenda.');
+        alert('Hubo un problema guardando la prenda.');
       }
     } catch (err) {
       console.error('Add item error:', err);
@@ -218,329 +263,318 @@ export default function MobileDashboardPage() {
     }
   };
 
-  // Handle Update Banner
+  // Handle Drop Scheduling
+  const handleScheduleDrop = async (payload: ScheduleDropPayload) => {
+    try {
+      const res = await fetch(`${getApiBase()}/api/schedule-drop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setItems((prev) =>
+          prev.map((item) => {
+            if (payload.skus.includes(item.sku)) {
+              return {
+                ...item,
+                status: 'Programado',
+                scheduledDropDate: payload.scheduledAt,
+              };
+            }
+            return item;
+          })
+        );
+        setIsScheduleModalOpen(false);
+        alert(`✨ ${data.message}`);
+      } else {
+        alert('Error al guardar el drop en Google Sheets.');
+      }
+    } catch (err) {
+      console.error('Schedule drop error:', err);
+      alert('Error al programar el drop.');
+    }
+  };
+
+  // Handle Banner Update
   const handleUpdateBanner = async (bannerUrl: string) => {
     try {
-      const res = await fetch('/api/banner', {
+      setIsUpdatingBanner(true);
+      const res = await fetch(`${getApiBase()}/api/banner`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bannerUrl }),
       });
+
       const data = await res.json();
       if (data.success) {
         setIsBannerModalOpen(false);
-        alert('✨ ¡Banner actualizado con éxito!');
+        alert('✨ ¡El banner de la web ha sido actualizado con éxito!');
       } else {
-        alert('Error al actualizar el banner.');
+        alert('Error al guardar la imagen del banner.');
       }
     } catch (err) {
       console.error('Update banner error:', err);
       alert('Error al comunicar con la API del banner.');
+    } finally {
+      setIsUpdatingBanner(false);
     }
   };
 
-  // Filter items
+  // Filtered items based on search query & visibility toggle filter
   const filteredItems = items.filter((item) => {
     const matchesSearch =
       item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.color.toLowerCase().includes(searchQuery.toLowerCase());
+      item.brand.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
+
     if (filterVisible === 'visible') return item.visibleInWeb;
     if (filterVisible === 'hidden') return !item.visibleInWeb;
     return true;
   });
 
-  const visibleCount = items.filter((it) => it.visibleInWeb).length;
-  const hiddenCount = items.filter((it) => !it.visibleInWeb).length;
+  const hiddenCount = items.filter((item) => !item.visibleInWeb).length;
+  const visibleCount = items.filter((item) => item.visibleInWeb).length;
 
   return (
     <ErrorBoundary>
-      <div
-        className="min-h-screen bg-slate-950 text-slate-100 flex flex-col w-full selection:bg-rose-500 selection:text-white"
-        style={{
-          paddingTop: 'max(env(safe-area-inset-top, 0px), 52px)',
-          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 80px)',
-        }}
-      >
-        {/* ── HEADER MÓVIL CON MARGEN PARA ISLA DINÁMICA / NOTCH ── */}
-        <header className="px-4 pb-3 space-y-3 sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-slate-900">
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-              <h1 className="text-lg font-serif font-bold text-slate-100 tracking-wide">
-                Sunday Clóset Móvil
+      <div className="flex min-h-screen bg-slate-950 text-slate-100">
+        {/* Left Navigation Sidebar */}
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            setIsMobileSidebarOpen(false);
+            if (tab === 'add') setIsAddModalOpen(true);
+            if (tab === 'schedule') setIsScheduleModalOpen(true);
+            if (tab === 'banner') setIsBannerModalOpen(true);
+            if (tab === 'pos') setIsPosModalOpen(true);
+          }}
+          onOpenAddModal={() => {
+            setIsMobileSidebarOpen(false);
+            setIsAddModalOpen(true);
+          }}
+          onOpenScheduleModal={() => {
+            setIsMobileSidebarOpen(false);
+            setIsScheduleModalOpen(true);
+          }}
+          onOpenBannerModal={() => {
+            setIsMobileSidebarOpen(false);
+            setIsBannerModalOpen(true);
+          }}
+          onOpenPosModal={() => {
+            setIsMobileSidebarOpen(false);
+            setIsPosModalOpen(true);
+          }}
+          hiddenCount={hiddenCount}
+          isOpenMobile={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        />
+
+        {/* Main Content Workspace */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Topbar Navigation */}
+          <Topbar
+            searchQuery={searchQuery}
+            setSearchQuery={(q) => setSearchQuery(q)}
+            onRefresh={fetchInventory}
+            isRefreshing={isRefreshing}
+            totalCount={items.length}
+            onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
+          />
+
+        {/* Dashboard Main View Container */}
+        <main 
+          style={{
+            paddingLeft: 'max(env(safe-area-inset-left, 0px), 16px)',
+            paddingRight: 'max(env(safe-area-inset-right, 0px), 16px)',
+            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 32px)',
+          }}
+          className="p-4 md:p-8 space-y-6 max-w-7xl w-full mx-auto"
+        >
+          {/* Header Dashboard Banner */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900 border border-slate-800 relative overflow-hidden shadow-2xl">
+            <div className="space-y-1 relative z-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                <Sparkles className="w-3.5 h-3.5" /> Sunday Clóset Operational Hub
+              </div>
+              <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-100">
+                Inventario Privado &amp; Drops
               </h1>
+              <p className="text-sm text-slate-400">
+                Gestión en tiempo real sincronizada con Google Sheets como Base de Datos.
+              </p>
             </div>
 
-            <button
-              onClick={fetchInventory}
-              disabled={isRefreshing}
-              className="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-sm"
-              aria-label="Sincronizar con Google Sheets"
-            >
-              <RotateCw className={`w-4 h-4 text-rose-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
+            {/* Metric Quick Stats */}
+            <div className="flex items-center gap-3 relative z-10">
+              <button
+                onClick={() => setFilterVisible('all')}
+                className={`px-4 py-2.5 rounded-2xl border text-xs font-medium transition-all ${
+                  filterVisible === 'all'
+                    ? 'bg-slate-800 text-white border-slate-700 shadow-xs'
+                    : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Tag className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Todos ({items.length})</span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setFilterVisible('visible')}
+                className={`px-4 py-2.5 rounded-2xl border text-xs font-medium transition-all ${
+                  filterVisible === 'visible'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-xs'
+                    : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Visible en Web ({visibleCount})</span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setFilterVisible('hidden')}
+                className={`px-4 py-2.5 rounded-2xl border text-xs font-medium transition-all ${
+                  filterVisible === 'hidden'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-xs'
+                    : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Ocultos / Drops ({hiddenCount})</span>
+                </div>
+              </button>
+            </div>
           </div>
 
-          {/* Buscador táctil */}
-          <div className="relative w-full">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar prenda, SKU, marca..."
-              className="w-full bg-slate-900/90 text-slate-100 placeholder-slate-500 text-sm pl-10 pr-4 py-2.5 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500/50 transition-all shadow-inner"
-            />
-          </div>
+          {/* Active Filter Bar */}
+          {filterVisible !== 'all' && (
+            <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-900/50 px-4 py-2 rounded-xl border border-slate-800">
+              <Filter className="w-3.5 h-3.5 text-rose-400" />
+              <span>Filtrando por: </span>
+              <span className="font-semibold text-slate-200 capitalize">
+                {filterVisible === 'visible' ? 'Prendas Visibles en Web' : 'Prendas Ocultas para Drops'}
+              </span>
+              <button
+                onClick={() => setFilterVisible('all')}
+                className="ml-auto text-rose-400 hover:underline"
+              >
+                Limpiar filtro
+              </button>
+            </div>
+          )}
 
-          {/* Chips de filtro rápido */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            <button
-              onClick={() => setFilterVisible('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                filterVisible === 'all'
-                  ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-                  : 'bg-slate-900 text-slate-400 border border-slate-800'
-              }`}
-            >
-              <Tag className="w-3 h-3" />
-              <span>Todos ({items.length})</span>
-            </button>
+          {/* Connection Notification */}
+          {loadError && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-amber-950/40 border border-amber-800/60 rounded-2xl text-xs text-amber-200">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                <span>{loadError}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => fetchInventory()}
+                  disabled={isRefreshing}
+                  className="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                >
+                  {isRefreshing ? 'Reintentando...' : 'Reintentar'}
+                </button>
+                <button
+                  onClick={handleHardReset}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-medium text-slate-300 transition-colors flex items-center gap-1"
+                >
+                  <Trash2 className="w-3 h-3 text-rose-400" />
+                  Limpiar caché
+                </button>
+              </div>
+            </div>
+          )}
 
-            <button
-              onClick={() => setFilterVisible('visible')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                filterVisible === 'visible'
-                  ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-                  : 'bg-slate-900 text-slate-400 border border-slate-800'
-              }`}
-            >
-              <Eye className="w-3 h-3" />
-              <span>En Web ({visibleCount})</span>
-            </button>
-
-            <button
-              onClick={() => setFilterVisible('hidden')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                filterVisible === 'hidden'
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
-                  : 'bg-slate-900 text-slate-400 border border-slate-800'
-              }`}
-            >
-              <EyeOff className="w-3 h-3" />
-              <span>Ocultos ({hiddenCount})</span>
-            </button>
-          </div>
-        </header>
-
-        {/* ── CONTENIDO PRINCIPAL: LISTA DE TARJETAS MÓVILES ── */}
-        <main className="flex-1 px-4 py-4 space-y-3 w-full">
+          {/* Inventory Table Container */}
           {isLoading && items.length === 0 ? (
-            <div className="py-20 text-center space-y-3">
-              <Loader2 className="w-8 h-8 text-rose-500 animate-spin mx-auto" />
-              <p className="text-xs text-slate-400 font-medium">Cargando inventario desde Google Sheets...</p>
-            </div>
-          ) : filteredItems.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 bg-slate-900/60 rounded-3xl border border-slate-800 p-6 space-y-2">
-              <Sparkles className="w-8 h-8 text-slate-600 mx-auto" />
-              <p className="font-medium text-slate-300 text-sm">No se encontraron prendas.</p>
-              <p className="text-xs text-slate-500">Prueba con otra búsqueda o cambia el filtro de visibilidad.</p>
+            <div className="w-full py-20 text-center text-slate-500 bg-slate-900/40 rounded-3xl border border-slate-800 space-y-4">
+              <div className="inline-block w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mb-1"></div>
+              <p className="text-sm font-medium text-slate-300">Cargando inventario desde Google Sheets...</p>
+              <div>
+                <button
+                  onClick={handleHardReset}
+                  className="text-xs text-rose-400 hover:text-rose-300 underline font-medium"
+                >
+                  ¿Tarda demasiado? Forzar recarga limpia
+                </button>
+              </div>
             </div>
           ) : (
-            filteredItems.map((item, index) => {
-              const isExpanded = expandedSku === item.sku;
-              const isUpdating = updatingSku === item.sku;
-              const isDeleting = deletingSku === item.sku;
-
-              return (
-                <article
-                  key={`mobile-card-${item.sku}-${index}`}
-                  className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-4 shadow-xl space-y-3 relative overflow-hidden transition-all"
-                >
-                  {/* Fila Superior: Imagen, Datos Básicos, Switch Web y Botón Basura Rojo */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-14 h-16 rounded-2xl bg-slate-800 border border-slate-700/80 overflow-hidden flex items-center justify-center shrink-0 shadow-inner">
-                        <DriveImage
-                          src={item.photoUrl}
-                          alt={item.type}
-                          loading="lazy"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      <div className="min-w-0 space-y-0.5">
-                        <span className="font-mono text-xs font-bold text-rose-400 block">
-                          {item.sku}
-                        </span>
-                        <h2 className="text-sm font-semibold text-slate-100 truncate">
-                          {item.type}
-                        </h2>
-                        <p className="text-xs text-slate-400 truncate">
-                          {item.brand || 'Sin marca'} · Talla {item.size}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Acciones: Switch iOS + Basura Roja */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="flex flex-col items-end gap-1">
-                        <IosToggle
-                          id={`mobile-toggle-${item.sku}-${index}`}
-                          checked={item.visibleInWeb}
-                          disabled={isUpdating || isDeleting}
-                          onChange={() => handleToggleVisibility(item.sku, item.visibleInWeb)}
-                        />
-                        <span className="text-[10px] font-medium text-slate-400">
-                          {item.visibleInWeb ? (
-                            <span className="text-emerald-400">En Web</span>
-                          ) : (
-                            <span className="text-slate-500">Oculto</span>
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Botón de Basura Rojo para Eliminar con Reordenamiento */}
-                      <button
-                        type="button"
-                        disabled={isDeleting || isUpdating}
-                        onClick={() => handleDeleteItem(item.sku)}
-                        title="Eliminar prenda del dashboard e inventario"
-                        className="p-2.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 text-rose-500 border border-rose-500/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs"
-                      >
-                        {isDeleting ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
-                        ) : (
-                          <Trash2 className="w-4 h-4 text-rose-500" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Estado y Precios */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
-                    <div className="flex items-center gap-2">
-                      <ItemStatusBadge status={item.status} />
-                      {item.scheduledDropDate && (
-                        <span className="text-[10px] text-amber-400/90 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {item.scheduledDropDate}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-500 block">Precio Web</span>
-                      <span className="font-semibold text-emerald-400 text-sm">
-                        ${formatPrice(item.pricePublished || item.priceWeb)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Botón Acordeón para ver más detalles */}
-                  <button
-                    type="button"
-                    onClick={() => setExpandedSku(isExpanded ? null : item.sku)}
-                    className="w-full pt-1 text-[11px] font-medium text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1 border-t border-slate-800/40 cursor-pointer"
-                  >
-                    <span>{isExpanded ? 'Ocultar detalles' : 'Ver desglose de precios y color'}</span>
-                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
-
-                  {/* Acordeón Expandido */}
-                  {isExpanded && (
-                    <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2 text-xs">
-                      <div className="grid grid-cols-2 gap-2 text-slate-300">
-                        <div><span className="text-slate-500">Color:</span> {item.color || 'N/A'}</div>
-                        <div><span className="text-slate-500">Estilo:</span> {item.style}</div>
-                        <div><span className="text-slate-500">Condición:</span> {item.condition}</div>
-                        <div><span className="text-slate-500">Costo compra:</span> ${formatPrice(item.cost)}</div>
-                        <div><span className="text-slate-500">Precio Insta:</span> ${formatPrice(item.priceSunday)}</div>
-                        <div><span className="text-slate-500">Precio FB:</span> ${formatPrice(item.priceFB)}</div>
-                        <div><span className="text-slate-500">Precio Paca:</span> ${formatPrice(item.pricePaca)}</div>
-                        <div><span className="text-slate-500">Publicado:</span> ${formatPrice(item.pricePublished)}</div>
-                      </div>
-                      {item.dropName && (
-                        <div className="pt-1.5 border-t border-slate-800/60 text-amber-300 text-[11px]">
-                          <span className="text-slate-500">Drop:</span> {item.dropName}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </article>
-              );
-            })
+            <InventoryTable
+              items={filteredItems}
+              onToggleVisibility={handleToggleVisibility}
+              onDeleteItem={handleDeleteItem}
+              isUpdatingSku={updatingSku}
+              isDeletingSku={deletingSku}
+            />
           )}
         </main>
-
-        {/* ── BARRA DE NAVEGACIÓN INFERIOR PARA IPHONE (BOTTOM BAR) ── */}
-        <nav className="fixed bottom-0 inset-x-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/90 px-4 py-2 pb-safe flex items-center justify-around shadow-2xl">
-          <button
-            type="button"
-            onClick={() => setFilterVisible('all')}
-            className={`flex flex-col items-center gap-1 p-1.5 rounded-xl transition-all ${
-              filterVisible === 'all' ? 'text-rose-400 font-medium' : 'text-slate-400'
-            }`}
-          >
-            <Layers className="w-5 h-5" />
-            <span className="text-[10px]">Inventario</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex flex-col items-center gap-1 p-1.5 text-slate-300 active:scale-95 transition-all"
-          >
-            <div className="w-9 h-9 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/30">
-              <Plus className="w-5 h-5" />
-            </div>
-            <span className="text-[10px] text-rose-400 font-medium">Nueva</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsPosModalOpen(true)}
-            className="flex flex-col items-center gap-1 p-1.5 text-slate-400 active:scale-95 transition-all"
-          >
-            <ShoppingBag className="w-5 h-5" />
-            <span className="text-[10px]">POS / Venta</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsBannerModalOpen(true)}
-            className="flex flex-col items-center gap-1 p-1.5 text-slate-400 active:scale-95 transition-all"
-          >
-            <ImageIcon className="w-5 h-5" />
-            <span className="text-[10px]">Banner Web</span>
-          </button>
-        </nav>
-
-        {/* Modales */}
-        <AddItemModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onSubmit={handleAddItem}
-        />
-
-        <PosModal
-          isOpen={isPosModalOpen}
-          onClose={() => setIsPosModalOpen(false)}
-          items={items}
-          onSaleCompleted={() => { fetchInventory(); }}
-        />
-
-        <BannerModal
-          isOpen={isBannerModalOpen}
-          onClose={() => setIsBannerModalOpen(false)}
-          onUpdateBanner={handleUpdateBanner}
-          isSubmitting={false}
-        />
       </div>
+
+      {/* Modals */}
+      <AddItemModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setActiveTab('inventory');
+        }}
+        onSubmit={handleAddItem}
+      />
+
+      <DropSchedulerModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => {
+          setIsScheduleModalOpen(false);
+          setActiveTab('inventory');
+        }}
+        items={items}
+        onScheduleDrop={handleScheduleDrop}
+      />
+
+      <BannerModal
+        isOpen={isBannerModalOpen}
+        onClose={() => {
+          setIsBannerModalOpen(false);
+          setActiveTab('inventory');
+        }}
+        onUpdateBanner={handleUpdateBanner}
+        isSubmitting={isUpdatingBanner}
+      />
+
+      {/* Manual Sales / POS Modal */}
+      <PosModal
+        isOpen={isPosModalOpen}
+        onClose={() => {
+          setIsPosModalOpen(false);
+          setActiveTab('inventory');
+        }}
+        items={items}
+        onSaleCompleted={(soldSkus) => {
+          setItems((prev) =>
+            prev.map((item) =>
+              soldSkus.includes(item.sku)
+                ? { ...item, status: 'Vendido', visibleInWeb: false }
+                : item
+            )
+          );
+          fetchInventory();
+        }}
+      />
+    </div>
     </ErrorBoundary>
   );
 }

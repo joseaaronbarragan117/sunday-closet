@@ -2,8 +2,8 @@
 import { Product, mockProducts } from './mockProducts';
 import { formatDriveImageUrl } from '@/lib/imageUrl';
 
-const DASHBOARD_API_URL =
-  process.env.NEXT_PUBLIC_INVENTORY_API_URL || 'http://localhost:3000/api/public/products';
+export const DASHBOARD_API_URL =
+  process.env.NEXT_PUBLIC_INVENTORY_API_URL || 'https://sunday-closet-dashboard.vercel.app/api/public/products';
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&auto=format&fit=crop&q=80';
@@ -26,7 +26,7 @@ function normalizePhotoUrl(url: string | undefined): string {
   return normalized || FALLBACK_IMAGE;
 }
 
-function mapItemToProduct(item: any): Product {
+export function mapItemToProduct(item: any): Product {
   const rawType = item.type || item.nombre || 'Prenda';
   const rawBrand = item.brand || item.marca || 'Sunday Curated';
   const rawSku = (item.sku || item.id || '').trim();
@@ -80,23 +80,7 @@ function mapItemToProduct(item: any): Product {
 }
 
 export async function fetchLiveProducts(): Promise<Product[]> {
-  // 1. Try full inventory from dashboard API (localhost:3000/api/inventory)
-  try {
-    const res = await fetch('http://localhost:3000/api/inventory', {
-      cache: 'no-store',
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const rawList = data.items || data.products;
-      if (Array.isArray(rawList) && rawList.length > 0) {
-        return rawList.map(mapItemToProduct);
-      }
-    }
-  } catch {
-    // try fallback public products
-  }
-
-  // 2. Try public products API
+  // 1. Priorizar API en vivo de Vercel / Google Sheets
   try {
     const resPub = await fetch(DASHBOARD_API_URL, {
       cache: 'no-store',
@@ -108,7 +92,23 @@ export async function fetchLiveProducts(): Promise<Product[]> {
       }
     }
   } catch {
-    // fallback
+    // fallback a localhost o mock
+  }
+
+  // 2. Intentar localhost si está corriendo en desarrollo local
+  try {
+    const res = await fetch('http://localhost:3000/api/public/products', {
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const rawList = data.products || data.items;
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        return rawList.map(mapItemToProduct);
+      }
+    }
+  } catch {
+    // fallback a mock
   }
 
   return mockProducts;

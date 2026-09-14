@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Image as ImageIcon, Sparkles, CheckCircle, ExternalLink } from 'lucide-react';
 import { DriveImage } from '@/components/common/DriveImage';
+import { getApiBase } from '@/lib/apiConfig';
 
 interface BannerModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ export const BannerModal: React.FC<BannerModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       // Fetch current banner
-      fetch('/api/banner')
+      fetch(`${getApiBase()}/api/banner`)
         .then((res) => res.json())
         .then((data) => {
           if (data.bannerUrl) {

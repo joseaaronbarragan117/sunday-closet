@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getGoogleSheetsClient, getSpreadsheetId } from '@/lib/googleSheets';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
   try {
     const spreadsheetId = getSpreadsheetId();
@@ -9,7 +19,7 @@ export async function POST(request: Request) {
     const { dropName, scheduledAt, skus } = await request.json();
 
     if (!skus || !Array.isArray(skus) || skus.length === 0) {
-      return NextResponse.json({ success: false, error: 'Se requiere al menos un SKU para programar' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Se requiere al menos un SKU para programar' }, { status: 400, headers: corsHeaders });
     }
 
     if (spreadsheetId && clientEmail) {
@@ -63,12 +73,12 @@ export async function POST(request: Request) {
       scheduledAt,
       skusCount: skus.length,
       message: `Drop '${dropName}' programado exitosamente para ${skus.length} prendas.`,
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('[API schedule-drop POST] Error:', error);
     return NextResponse.json(
       { success: false, error: 'Error al programar el drop' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
