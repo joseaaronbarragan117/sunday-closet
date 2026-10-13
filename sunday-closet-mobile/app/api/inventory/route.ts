@@ -4,6 +4,16 @@ import { InventoryItem, ItemStyle, ItemCondition } from '@/types/inventory';
 import { calculatePrices } from '@/lib/priceCalculator';
 import { formatDriveImageUrl } from '@/lib/imageUrl';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
+
 // Fallback Mock Inventory Data for UI verification
 const MOCK_INVENTORY: InventoryItem[] = [
   {
@@ -55,12 +65,12 @@ export async function GET() {
         try {
           return await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: "'Inventario Central'!A2:V",
+            range: "'Inventario Central'!A2:Y",
           });
         } catch (err) {
           return await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: 'A2:V',
+            range: 'A2:Y',
           });
         }
       })();
@@ -106,6 +116,9 @@ export async function GET() {
               visibleInWeb: isVisible,
               scheduledDropDate: row[20] ? row[20].trim() : undefined,
               dropName: row[19] ? row[19].trim() : undefined,
+              lotName: row[22] ? row[22].trim() : undefined,
+              lotDate: row[23] ? row[23].trim() : undefined,
+              lotTotalCost: row[24] !== undefined && row[24] !== '' ? parseMoney(row[24]) : undefined,
             };
           });
 
@@ -135,7 +148,7 @@ export async function POST(request: Request) {
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL || '';
 
     const body = await request.json();
-    const { photoUrl, type, size, color, brand, style, condition, cost, pricePublished } = body;
+    const { photoUrl, type, size, color, brand, style, condition, cost, pricePublished, lotName, lotDate, lotTotalCost } = body;
 
     if (!type || !style || !condition || cost === undefined || pricePublished === undefined) {
       return NextResponse.json({ success: false, error: 'Campos requeridos faltantes' }, { status: 400 });
@@ -200,13 +213,16 @@ export async function POST(request: Request) {
       pricePublished: Number(pricePublished),
       visibleInWeb: false,
       status: 'Disponible',
+      lotName: lotName ? String(lotName).trim() : undefined,
+      lotDate: lotDate ? String(lotDate).trim() : undefined,
+      lotTotalCost: lotTotalCost !== undefined && lotTotalCost !== '' ? Number(lotTotalCost) : undefined,
     };
 
     if (spreadsheetId && clientEmail) {
       const sheets = getGoogleSheetsClient();
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: "'Inventario Central'!A:V",
+        range: "'Inventario Central'!A:Y",
         valueInputOption: 'USER_ENTERED',
         requestBody: {
           values: [
@@ -233,6 +249,9 @@ export async function POST(request: Request) {
               '',                           // Col T (19): Nombre del Drop
               '',                           // Col U (20): Fecha Programada Drop
               'FALSO',                      // Col V (21): Visible en Web
+              newItem.lotName || '',        // Col W (22): Nombre del Lote
+              newItem.lotDate || '',        // Col X (23): Fecha del Lote
+              newItem.lotTotalCost !== undefined ? newItem.lotTotalCost : '', // Col Y (24): Costo Total del Lote
             ],
           ],
         },

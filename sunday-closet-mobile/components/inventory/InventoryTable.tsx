@@ -102,7 +102,14 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                     {/* Tipo + Marca */}
                     <td className="py-4 px-6">
                       <div className="font-semibold text-slate-100">{item.type}</div>
-                      <div className="text-xs text-slate-400">{item.brand}</div>
+                      <div className="text-xs text-slate-400 flex items-center gap-2 flex-wrap">
+                        <span>{item.brand}</span>
+                        {item.lotName && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/25 font-medium">
+                            Lote: {item.lotName}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Detalles */}
