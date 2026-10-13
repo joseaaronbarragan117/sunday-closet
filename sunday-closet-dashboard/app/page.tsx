@@ -9,7 +9,9 @@ import { DropSchedulerModal } from '@/components/modals/DropSchedulerModal';
 import { BannerModal } from '@/components/modals/BannerModal';
 import { PosModal } from '@/components/modals/PosModal';
 import { PrintView } from '@/components/print/PrintView';
-import { InventoryItem, NewItemFormData, ScheduleDropPayload } from '@/types/inventory';
+import { GalleryFeedView } from '@/components/gallery/GalleryFeedView';
+import { AddLotModal } from '@/components/modals/AddLotModal';
+import { InventoryItem, NewItemFormData, ScheduleDropPayload, AddLotFormData } from '@/types/inventory';
 import { Tag, Eye, EyeOff, Sparkles, Filter, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { getApiBase } from '@/lib/apiConfig';
@@ -38,6 +40,9 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
       status: (item.status || 'Disponible'),
       scheduledDropDate: item.scheduledDropDate ? String(item.scheduledDropDate) : undefined,
       dropName: item.dropName ? String(item.dropName) : undefined,
+      lotName: item.lotName ? String(item.lotName) : undefined,
+      lotDate: item.lotDate ? String(item.lotDate) : undefined,
+      lotTotalCost: item.lotTotalCost ? Number(item.lotTotalCost) : undefined,
     }))
     .filter((item) => {
       if (!item.sku || seen.has(item.sku)) return false;
@@ -49,8 +54,9 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
 export default function DashboardPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'inventory' | 'print' | 'add' | 'schedule' | 'banner' | 'pos'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos'>('inventory');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isLotModalOpen, setIsLotModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
@@ -58,6 +64,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingBanner, setIsUpdatingBanner] = useState(false);
+  const [isSubmittingLot, setIsSubmittingLot] = useState(false);
   const [updatingSku, setUpdatingSku] = useState<string | null>(null);
   const [deletingSku, setDeletingSku] = useState<string | null>(null);
   const [filterVisible, setFilterVisible] = useState<'all' | 'visible' | 'hidden'>('all');
@@ -264,6 +271,34 @@ export default function DashboardPage() {
     }
   };
 
+  // Handle Adding Batch Lot
+  const handleAddLot = async (formData: AddLotFormData) => {
+    try {
+      setIsSubmittingLot(true);
+      const res = await fetch(`${getApiBase()}/api/lot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.items) {
+        setItems((prev) => [...data.items, ...prev]);
+        setIsLotModalOpen(false);
+        setActiveTab('inventory');
+        alert(`✨ ${data.message || 'Lote agregado con éxito.'}`);
+      } else {
+        alert(data.error || 'Hubo un problema guardando el lote.');
+      }
+    } catch (err) {
+      console.error('Add lot error:', err);
+      alert('Error en la petición para guardar el lote.');
+    } finally {
+      setIsSubmittingLot(false);
+    }
+  };
+
   // Handle Drop Scheduling
   const handleScheduleDrop = async (payload: ScheduleDropPayload) => {
     try {
@@ -351,6 +386,7 @@ export default function DashboardPage() {
             setActiveTab(tab);
             setIsMobileSidebarOpen(false);
             if (tab === 'add') setIsAddModalOpen(true);
+            if (tab === 'lot') setIsLotModalOpen(true);
             if (tab === 'schedule') setIsScheduleModalOpen(true);
             if (tab === 'banner') setIsBannerModalOpen(true);
             if (tab === 'pos') setIsPosModalOpen(true);
@@ -358,6 +394,10 @@ export default function DashboardPage() {
           onOpenAddModal={() => {
             setIsMobileSidebarOpen(false);
             setIsAddModalOpen(true);
+          }}
+          onOpenLotModal={() => {
+            setIsMobileSidebarOpen(false);
+            setIsLotModalOpen(true);
           }}
           onOpenScheduleModal={() => {
             setIsMobileSidebarOpen(false);
@@ -399,6 +439,12 @@ export default function DashboardPage() {
         >
           {activeTab === 'print' ? (
             <PrintView items={items} />
+          ) : activeTab === 'gallery' ? (
+            <GalleryFeedView
+              items={items}
+              onToggleVisibility={handleToggleVisibility}
+              isUpdatingSku={updatingSku}
+            />
           ) : (
             <>
               {/* Header Dashboard Banner */}
@@ -540,6 +586,16 @@ export default function DashboardPage() {
           setActiveTab('inventory');
         }}
         onSubmit={handleAddItem}
+      />
+
+      <AddLotModal
+        isOpen={isLotModalOpen}
+        onClose={() => {
+          setIsLotModalOpen(false);
+          setActiveTab('inventory');
+        }}
+        onSubmit={handleAddLot}
+        isSubmitting={isSubmittingLot}
       />
 
       <DropSchedulerModal

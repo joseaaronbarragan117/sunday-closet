@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, Printer, X } from 'lucide-react';
+import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, Printer, X, Grid, Layers } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'inventory' | 'print' | 'add' | 'schedule' | 'banner' | 'pos';
-  setActiveTab: (tab: 'inventory' | 'print' | 'add' | 'schedule' | 'banner' | 'pos') => void;
+  activeTab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos';
+  setActiveTab: (tab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos') => void;
   onOpenAddModal: () => void;
+  onOpenLotModal: () => void;
   onOpenScheduleModal: () => void;
   onOpenBannerModal: () => void;
   onOpenPosModal: () => void;
@@ -19,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   onOpenAddModal,
+  onOpenLotModal,
   onOpenScheduleModal,
   onOpenBannerModal,
   onOpenPosModal,
@@ -91,6 +93,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Tag className="w-3.5 h-3.5 opacity-60" />
           </button>
 
+          {/* Galería Feed (Instagram Style) Navigation Button */}
+          <button
+            id="btn-nav-gallery"
+            onClick={() => setActiveTab('gallery')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === 'gallery'
+                ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-xs font-semibold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Grid className="w-4 h-4 text-rose-400" />
+              <span>Galería Feed</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono">
+              Fotos
+            </span>
+          </button>
+
           {/* Impresión de Etiquetas Navigation Button */}
           <button
             id="btn-nav-print"
@@ -132,6 +153,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <PlusCircle className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
             <span>+ Agregar Prenda</span>
+          </button>
+
+          {/* + Agregar Lote directly below + Agregar Prenda */}
+          <button
+            id="btn-nav-add-lot"
+            onClick={onOpenLotModal}
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-amber-600/20 hover:border-amber-500/30 border border-transparent transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <Layers className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span>+ Agregar Lote</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
+              Paca
+            </span>
           </button>
 
           <button

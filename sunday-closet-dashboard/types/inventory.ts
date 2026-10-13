@@ -22,6 +22,9 @@ export interface InventoryItem {
   status: InventoryStatus;
   scheduledDropDate?: string;
   dropName?: string;
+  lotName?: string;
+  lotDate?: string;
+  lotTotalCost?: number;
 }
 
 export interface CalculatedPrices {
@@ -41,6 +44,29 @@ export interface NewItemFormData {
   condition: ItemCondition;
   cost: number;
   pricePublished: number;
+  lotName?: string;
+  lotDate?: string;
+  lotTotalCost?: number;
+}
+
+export interface LotItemInput {
+  type: string;
+  size: string;
+  color: string;
+  brand: string;
+  style: ItemStyle;
+  condition: ItemCondition;
+  photoUrl: string;
+  cost?: number;
+  pricePublished?: number;
+}
+
+export interface AddLotFormData {
+  lotName: string;
+  lotDate: string;
+  lotTotalCost: number;
+  isIndividualPrice: boolean;
+  items: LotItemInput[];
 }
 
 export interface ScheduleDropPayload {
