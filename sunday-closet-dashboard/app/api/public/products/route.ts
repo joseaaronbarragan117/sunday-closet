@@ -75,6 +75,7 @@ export async function GET(request: Request) {
       })
       .filter((product) => {
         if (!product.visibleInWeb) return false;
+        const statusLower = (product.status || '').toLowerCase();
         const isAllowedStatus =
           statusLower === 'disponible' ||
           statusLower === 'en stock' ||

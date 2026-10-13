@@ -102,8 +102,8 @@ export async function fetchLiveProducts(): Promise<Product[]> {
     if (resPub.ok) {
       const dataPub = await resPub.json();
       if (dataPub.success && Array.isArray(dataPub.products) && dataPub.products.length > 0) {
-        const mapped = dataPub.products.map(mapItemToProduct);
-        return mapped.filter((p) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
+        const mapped: Product[] = dataPub.products.map(mapItemToProduct);
+        return mapped.filter((p: Product) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
       }
     }
   } catch {
@@ -119,15 +119,15 @@ export async function fetchLiveProducts(): Promise<Product[]> {
       const data = await res.json();
       const rawList = data.products || data.items;
       if (Array.isArray(rawList) && rawList.length > 0) {
-        const mapped = rawList.map(mapItemToProduct);
-        return mapped.filter((p) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
+        const mapped: Product[] = rawList.map(mapItemToProduct);
+        return mapped.filter((p: Product) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
       }
     }
   } catch {
     // fallback a mock
   }
 
-  return mockProducts.filter((p) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
+  return mockProducts.filter((p: Product) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
 }
 
 export async function getLiveProductBySlug(slug: string): Promise<Product | undefined> {
