@@ -1,12 +1,11 @@
 // src/components/cart/MobileCartSheet.tsx
 "use client";
 
-import React from "react";
-import { X, Trash2, ShoppingBag, MessageCircle, ArrowRight } from "lucide-react";
+import { X, Trash2, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/lib/store/cartStore";
 import { formatPrice } from "@/lib/utils/format";
 import { DriveImage } from "@/components/common/DriveImage";
-import { createCartWhatsAppUrl } from "@/lib/utils/whatsapp";
+import { ManualCheckoutButtons } from "@/components/cart/ManualCheckoutButtons";
 
 interface MobileCartSheetProps {
   isOpen: boolean;
@@ -25,11 +24,6 @@ export const MobileCartSheet: React.FC<MobileCartSheetProps> = ({
 
   const totalAmount = total();
   const itemCount = count();
-
-  const handleCheckoutWhatsApp = () => {
-    if (items.length === 0) return;
-    window.open(createCartWhatsAppUrl(items, totalAmount), "_blank");
-  };
 
   return (
     <div
@@ -161,18 +155,10 @@ export const MobileCartSheet: React.FC<MobileCartSheetProps> = ({
               </span>
             </div>
 
-            <p className="text-[11px] text-slate-400 leading-tight">
-              * Cada pieza es 1 de 1. Al enviar tu pedido por WhatsApp, garantizas tu apartado inmediato.
-            </p>
-
-            <button
-              onClick={handleCheckoutWhatsApp}
-              className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 active:scale-98 transition-all"
-            >
-              <MessageCircle className="w-4 h-4 fill-white" />
-              <span>Apartar Bolsa por WhatsApp</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <ManualCheckoutButtons
+              items={items}
+              totalAmount={totalAmount}
+            />
           </div>
         )}
       </div>
