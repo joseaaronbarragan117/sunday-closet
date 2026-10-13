@@ -249,6 +249,10 @@ export const MobileProductDetailView: React.FC<MobileProductDetailViewProps> = (
                 )}
               </button>
             </>
+          ) : product.estado === 'apartado' ? (
+            <div className="w-full py-4 px-4 text-center bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-xs font-bold tracking-wide shadow-xs">
+              🔒 Prenda Apartada — No disponible para compra
+            </div>
           ) : (
             <div className="w-full py-4 text-center bg-neutral-200 text-neutral-500 rounded-2xl text-xs font-semibold">
               Esta prenda ya fue adquirida

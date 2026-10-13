@@ -1,6 +1,6 @@
 // src/lib/data/mockProducts.ts
 
-export type ProductStatus = "disponible" | "vendido" | "en_carrito";
+export type ProductStatus = "disponible" | "vendido" | "en_carrito" | "apartado";
 export type ClothingCategory = "superior" | "inferior" | "accesorio";
 
 export interface Product {
@@ -15,6 +15,7 @@ export interface Product {
   precio: number;
   precioOriginal?: number;
   estado: ProductStatus;
+  condicion?: string; // ej. "Nuevo c/etiqueta" | "Nuevo s/etiqueta" | "Con detalle"
   categoriaRopa: ClothingCategory;
   descripcion: string;
   imagenUrl: string;
@@ -71,7 +72,7 @@ export const mockProducts: Product[] = [
     talla: "L",
     color: "Azul Denim",
     precio: 22000,
-    estado: "en_carrito",
+    estado: "apartado",
     categoriaRopa: "superior",
     descripcion: "Camisa denim oversize desteñida con parches laterales. Estilo 90s grunge. Se puede usar como campera.",
     imagenUrl: PLACEHOLDER(600, 800, "4A6FA5", "Camisa Denim"),

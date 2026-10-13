@@ -21,7 +21,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#F7F6F2",
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -30,11 +30,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className="h-full">
+    <html lang="es" className="h-full bg-neutral-950">
       <head>
         <link rel="apple-touch-icon" href="/favicon.ico" />
       </head>
-      <body className="min-h-full flex flex-col bg-[#F7F6F2] text-[#1F1F1F]">
+      <body className="min-h-full flex flex-col bg-neutral-950 text-white antialiased">
         {children}
       </body>
     </html>

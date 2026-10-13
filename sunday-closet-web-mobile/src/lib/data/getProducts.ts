@@ -54,9 +54,21 @@ export function mapItemToProduct(item: any): Product {
     categoriaRopa = 'accesorio';
   }
 
+  const statusLower = (item.status || '').toLowerCase().trim();
   const isAvailable =
-    item.status?.toLowerCase() === 'disponible' ||
-    item.status?.toLowerCase() === 'en stock';
+    statusLower === 'disponible' ||
+    statusLower === 'en stock';
+  const isApartado =
+    statusLower === 'apartado' ||
+    statusLower === 'apartada' ||
+    statusLower === 'reservado' ||
+    statusLower === 'reservada';
+
+  const estado: Product['estado'] = isAvailable
+    ? 'disponible'
+    : isApartado
+    ? 'apartado'
+    : 'vendido';
 
   return {
     id: rawSku,
@@ -69,7 +81,8 @@ export function mapItemToProduct(item: any): Product {
     color: item.color || item.colour || undefined,
     precio: Number(item.pricePublished) || Number(item.priceWeb) || Number(item.priceSunday) || Number(item.precio) || 0,
     precioOriginal: item.precioOriginal ? Number(item.precioOriginal) : (item.priceOriginal ? Number(item.priceOriginal) : (item.descuento ? Math.round((Number(item.pricePublished) || Number(item.precio) || 0) * (1 + Number(item.descuento)/100)) : undefined)),
-    estado: isAvailable ? 'disponible' : 'vendido',
+    estado,
+    condicion: item.condition || item.condicion || 'Nuevo c/etiqueta',
     categoriaRopa,
     descripcion: item.descripcion || `${rawType} de ${rawBrand}. Talla ${item.size || item.talla || 'Única'}, color ${item.color || 'exclusivo'}. Prenda única seleccionada para Sunday Clóset.`,
     imagenUrl: normalizePhotoUrl(item.photoUrl || item.imagenUrl),
@@ -89,7 +102,8 @@ export async function fetchLiveProducts(): Promise<Product[]> {
     if (resPub.ok) {
       const dataPub = await resPub.json();
       if (dataPub.success && Array.isArray(dataPub.products) && dataPub.products.length > 0) {
-        return dataPub.products.map(mapItemToProduct);
+        const mapped = dataPub.products.map(mapItemToProduct);
+        return mapped.filter((p) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
       }
     }
   } catch {
@@ -105,14 +119,15 @@ export async function fetchLiveProducts(): Promise<Product[]> {
       const data = await res.json();
       const rawList = data.products || data.items;
       if (Array.isArray(rawList) && rawList.length > 0) {
-        return rawList.map(mapItemToProduct);
+        const mapped = rawList.map(mapItemToProduct);
+        return mapped.filter((p) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
       }
     }
   } catch {
     // fallback a mock
   }
 
-  return mockProducts;
+  return mockProducts.filter((p) => p.visibleEnWeb && (p.estado === 'disponible' || p.estado === 'apartado'));
 }
 
 export async function getLiveProductBySlug(slug: string): Promise<Product | undefined> {

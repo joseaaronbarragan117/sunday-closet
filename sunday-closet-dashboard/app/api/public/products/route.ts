@@ -75,8 +75,14 @@ export async function GET(request: Request) {
       })
       .filter((product) => {
         if (!product.visibleInWeb) return false;
-        const statusLower = (product.status || '').toLowerCase();
-        if (statusLower !== 'disponible' && statusLower !== 'en stock') return false;
+        const isAllowedStatus =
+          statusLower === 'disponible' ||
+          statusLower === 'en stock' ||
+          statusLower === 'apartado' ||
+          statusLower === 'apartada' ||
+          statusLower === 'reservado' ||
+          statusLower === 'reservada';
+        if (!isAllowedStatus) return false;
         if (categoryFilter && !product.type.toLowerCase().includes(categoryFilter)) return false;
         if (brandFilter && !product.brand.toLowerCase().includes(brandFilter)) return false;
         return true;

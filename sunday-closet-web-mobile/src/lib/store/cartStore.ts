@@ -38,6 +38,9 @@ export const useCartStore = create<CartState>()(
       toggleCart: () => set((s) => ({ isOpen: !s.isOpen })),
 
       addItem: (product) => {
+        // Prenda apartada o vendida no se puede agregar al carrito
+        if (product.estado === 'apartado' || product.estado === 'vendido') return;
+
         const exists = get().items.find((i) => i.product.id === product.id);
         if (exists) return;
 

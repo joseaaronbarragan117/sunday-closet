@@ -214,6 +214,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 {inCart ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
               </button>
             </div>
+          ) : product.estado === "apartado" ? (
+            <div className="w-full py-4 text-center bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider rounded-md border border-amber-300">
+              🔒 PRENDA APARTADA (NO DISPONIBLE)
+            </div>
           ) : (
             <div className="w-full py-4 text-center bg-[#EAEAEA] text-[#767676] text-xs font-bold uppercase tracking-wider">
               ESTA PRENDA YA FUE ADQUIRIDA

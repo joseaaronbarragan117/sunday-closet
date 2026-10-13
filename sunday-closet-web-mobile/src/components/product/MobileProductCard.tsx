@@ -60,7 +60,11 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
 
         {/* Bottom-left Tag Pill (ONLY shows discount if hasDiscount, or AGOTADO) */}
         <div className="absolute bottom-0 left-0 z-10">
-          {!isAvailable ? (
+          {product.estado === "apartado" ? (
+            <span className="bg-amber-600 text-white text-[10px] sm:text-[11px] font-bold px-2 py-1 inline-block uppercase tracking-wider">
+              APARTADA
+            </span>
+          ) : !isAvailable ? (
             <span className="bg-black text-white text-[10px] sm:text-[11px] font-bold px-2 py-1 inline-block uppercase tracking-wider">
               AGOTADO
             </span>

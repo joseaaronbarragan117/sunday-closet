@@ -1,10 +1,10 @@
 // src/app/page.tsx
 import { fetchLiveProducts } from "@/lib/data/getProducts";
-import { MobileStorefront } from "@/components/home/MobileStorefront";
+import { InstagramCatalogFeed } from "@/components/home/InstagramCatalogFeed";
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export default async function MobileHomePage() {
   const products = await fetchLiveProducts();
-  return <MobileStorefront initialProducts={products} />;
+  return <InstagramCatalogFeed initialProducts={products} />;
 }
