@@ -5,7 +5,6 @@ import { InventoryItem } from '@/types/inventory';
 import { DriveImage } from '@/components/common/DriveImage';
 import {
   Search,
-  Instagram,
   Check,
   Copy,
   Layers,
@@ -16,6 +15,7 @@ import {
   RotateCcw,
   AlertCircle,
 } from 'lucide-react';
+import { InstagramIcon } from '@/components/common/InstagramIcon';
 
 interface InstagramListViewProps {
   items: InventoryItem[];
@@ -152,7 +152,7 @@ export const InstagramListView: React.FC<InstagramListViewProps> = ({ items }) =
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-pink-500 text-white shadow-md shadow-pink-500/20">
-              <Instagram className="w-5 h-5" />
+              <InstagramIcon className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
@@ -301,7 +301,7 @@ export const InstagramListView: React.FC<InstagramListViewProps> = ({ items }) =
       {/* Grid View (Identical to Galería Feed: 3 per row on mobile, responsive on desktop) */}
       {displayItems.length === 0 ? (
         <div className="py-20 text-center rounded-3xl bg-slate-900/40 border border-slate-800 text-slate-400 space-y-2">
-          <Instagram className="w-8 h-8 mx-auto text-slate-600 mb-2" />
+          <InstagramIcon className="w-8 h-8 mx-auto text-slate-600 mb-2" />
           <p className="text-sm font-semibold text-slate-300">No se encontraron prendas</p>
           <p className="text-xs text-slate-500">Prueba ajustando el filtro de lote o búsqueda.</p>
         </div>
@@ -393,7 +393,7 @@ export const InstagramListView: React.FC<InstagramListViewProps> = ({ items }) =
             <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-pink-500 text-white shadow-md shadow-pink-500/20">
-                  <Instagram className="w-5 h-5" />
+                  <InstagramIcon className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">

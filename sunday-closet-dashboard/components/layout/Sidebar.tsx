@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, Printer, X, Grid, Layers, Instagram } from 'lucide-react';
+import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, Printer, X, Grid, Layers } from 'lucide-react';
+import { InstagramIcon } from '@/components/common/InstagramIcon';
 
 interface SidebarProps {
   activeTab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos' | 'ig-lists';
@@ -207,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-3">
-              <Instagram className="w-4 h-4 text-pink-400" />
+              <InstagramIcon className="w-4 h-4 text-pink-400" />
               <span>Listas ig</span>
             </div>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 font-mono">
