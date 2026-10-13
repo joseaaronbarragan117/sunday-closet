@@ -10,11 +10,10 @@ import {
   ShoppingBag,
   Check,
   Share2,
-  Bookmark,
-  ShieldCheck,
   Lock,
   Sparkles,
   Tag,
+  Copy,
 } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { formatPrice } from "@/lib/utils/format";
@@ -89,62 +88,56 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.85, y: 20 }}
+          initial={{ opacity: 0, scale: 0.88, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.88, y: 20 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          exit={{ opacity: 0, scale: 0.9, y: 15 }}
+          transition={{ type: "spring", damping: 26, stiffness: 320 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl border border-neutral-200 my-auto flex flex-col max-h-[92vh]"
+          className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl my-auto flex flex-col max-h-[92vh] text-slate-100"
         >
-          {/* 1. Header (Instagram Post Style) */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 bg-white/95 sticky top-0 z-20">
-            <div className="flex items-center gap-2.5">
-              {/* Profile Avatar with Instagram Gradient Ring */}
-              <div className="w-9 h-9 rounded-full p-[2px] bg-gradient-to-tr from-amber-500 via-rose-500 to-fuchsia-600">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo.png"
-                  alt="Sunday Clóset"
-                  className="w-full h-full rounded-full object-cover bg-white"
-                />
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-xs text-neutral-900 leading-none">
-                    sundaycloset.mx
-                  </span>
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-500/20" />
-                </div>
-                <span className="text-[10px] text-neutral-500 leading-none mt-0.5">
-                  Catálogo Oficial • Pieza Única
+          {/* 1. Modal Header (Exact Dashboard Style) */}
+          <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/70 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-bold text-rose-400 px-2.5 py-1 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                {product.id}
+              </span>
+              {isAvailable ? (
+                <span className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Disponible
                 </span>
-              </div>
+              ) : isApartado ? (
+                <span className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                  <Lock className="w-3 h-3 text-amber-400" />
+                  Apartada
+                </span>
+              ) : null}
             </div>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-800 hover:bg-neutral-100 active:scale-90 transition-all"
-              aria-label="Cerrar"
+              className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors active:scale-95"
+              aria-label="Cerrar modal"
             >
               <X className="w-5 h-5 stroke-[2]" />
             </button>
           </div>
 
-          {/* Scrollable Post Content */}
-          <div className="flex-1 overflow-y-auto divide-y divide-neutral-100">
-            {/* 2. Main Photo Container (Double-tap interaction) */}
+          {/* 2. Scrollable Body */}
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
+            {/* Main Photo (Double-tap interaction like Instagram) */}
             <div
               onDoubleClick={handleDoubleTap}
-              className="relative w-full aspect-square bg-neutral-100 overflow-hidden select-none"
+              className="w-full aspect-square max-h-80 sm:max-h-96 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 relative select-none"
             >
               <DriveImage
                 src={product.imagenUrl}
                 alt={product.nombre || product.tipo}
-                className="w-full h-full object-cover object-top"
+                className="w-full h-full object-contain"
               />
 
               {/* Popping Heart Animation on Double-Tap */}
@@ -154,154 +147,127 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
                 </div>
               )}
 
-              {/* Status Ribbon in Photo */}
-              <div className="absolute top-3 left-3">
-                {isApartado ? (
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500 text-white shadow-md flex items-center gap-1.5">
-                    <Lock className="w-3 h-3" /> Apartada
-                  </span>
-                ) : isAvailable ? (
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-600 text-white shadow-md flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3" /> Disponible (1 de 1)
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-neutral-800 text-white shadow-md">
-                    No disponible
-                  </span>
-                )}
-              </div>
-
-              {/* SKU Badge */}
-              <div className="absolute bottom-3 right-3">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-black/70 backdrop-blur-xs text-white">
-                  SKU: {product.id}
-                </span>
-              </div>
-            </div>
-
-            {/* 3. Action Bar (Instagram Interaction Row) */}
-            <div className="px-4 py-2.5 flex items-center justify-between bg-white">
-              <div className="flex items-center gap-4">
+              {/* Top-Right Favorite & Share Buttons */}
+              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
                 <button
-                  onClick={() => toggleFavorite(product)}
-                  className="p-1 hover:opacity-70 active:scale-90 transition-all text-neutral-800"
-                  aria-label="Me gusta"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(product);
+                  }}
+                  className="p-2 rounded-xl bg-slate-950/80 backdrop-blur-xs border border-slate-800 text-slate-300 hover:text-white active:scale-90 transition-all"
+                  aria-label="Favorito"
                 >
                   <Heart
-                    className={`w-6 h-6 transition-colors ${
-                      favorite
-                        ? "fill-rose-500 text-rose-500"
-                        : "text-neutral-800 fill-none stroke-[1.8]"
+                    className={`w-4 h-4 ${
+                      favorite ? "fill-rose-500 text-rose-500" : "text-slate-300"
                     }`}
                   />
                 </button>
 
                 <button
-                  onClick={handleShare}
-                  className="p-1 hover:opacity-70 active:scale-90 transition-all text-neutral-800 relative"
-                  aria-label="Compartir prenda"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShare();
+                  }}
+                  className="p-2 rounded-xl bg-slate-950/80 backdrop-blur-xs border border-slate-800 text-slate-300 hover:text-white active:scale-90 transition-all relative"
+                  aria-label="Compartir"
                 >
-                  <Share2 className="w-5 h-5 stroke-[1.8]" />
+                  <Share2 className="w-4 h-4" />
                   {copiedLink && (
-                    <span className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black text-white text-[9px] font-bold rounded-full whitespace-nowrap">
-                      ¡Enlace copiado!
+                    <span className="absolute -bottom-7 right-0 px-2 py-0.5 bg-slate-950 text-rose-300 border border-slate-800 text-[10px] font-bold rounded-lg whitespace-nowrap shadow-md">
+                      ¡Copiado!
                     </span>
                   )}
                 </button>
+              </div>
+            </div>
 
-                {isAvailable && (
-                  <button
-                    onClick={handleAddToCart}
-                    className="p-1 hover:opacity-70 active:scale-90 transition-all text-neutral-800"
-                    aria-label="Añadir a la bolsa"
-                  >
-                    <ShoppingBag
-                      className={`w-5 h-5 ${
-                        inCart ? "text-emerald-600 stroke-[2.2]" : "stroke-[1.8]"
-                      }`}
-                    />
-                  </button>
-                )}
+            {/* Title, Brand, and Price Row */}
+            <div className="flex items-start justify-between gap-3 pt-1">
+              <div className="space-y-0.5">
+                <h3 className="text-lg sm:text-xl font-bold text-white leading-tight capitalize">
+                  {product.nombre || product.tipo}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Marca:{" "}
+                  <span className="text-slate-200 font-semibold">
+                    {product.marca || "Sunday Curated"}
+                  </span>{" "}
+                  • Talla:{" "}
+                  <span className="text-rose-400 font-bold">{product.talla || "M"}</span>
+                </p>
               </div>
 
-              {/* Price Highlight */}
-              <div className="text-right">
-                <span className="text-lg font-serif font-black text-neutral-900 tracking-tight">
+              <div className="text-right shrink-0">
+                <span className="font-mono text-2xl font-bold text-rose-400">
                   {formatPrice(product.precio)}
                 </span>
-                <span className="block text-[9px] text-neutral-400 uppercase font-semibold">
+                <span className="block text-[10px] text-slate-500 font-mono">
                   MXN
                 </span>
               </div>
             </div>
 
-            {/* 4. Instagram Post Description & Garment Specs */}
-            <div className="p-4 space-y-3 bg-white text-xs text-neutral-800">
-              {/* Post Caption Title */}
-              <div>
-                <p className="leading-relaxed">
-                  <span className="font-bold text-neutral-900 mr-1.5">sundaycloset.mx</span>
-                  <span className="font-semibold text-neutral-900 capitalize">
-                    {product.nombre || product.tipo}
-                  </span>{" "}
-                  {product.marca && (
-                    <span className="text-neutral-500">de {product.marca}</span>
-                  )}
-                  . {product.descripcion || "Pieza única seleccionada para Sunday Clóset."}
-                </p>
+            {/* Details Grid (Exact Dashboard Aesthetic from GalleryFeedView) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block font-medium">Color</span>
+                <span className="font-semibold text-slate-200">{product.color || "—"}</span>
               </div>
-
-              {/* Garment Technical Specs (Ficha técnica en post) */}
-              <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-100 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1">
-                  <Tag className="w-3 h-3 text-rose-500" /> Detalles de la prenda
+              <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block font-medium">Talla</span>
+                <span className="font-semibold text-slate-200">{product.talla || "M"}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block font-medium">Estilo</span>
+                <span className="font-semibold text-slate-200 capitalize">{product.estilo || "Vintage"}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block font-medium">Condición</span>
+                <span className="font-semibold text-slate-200">{product.condicion || "Nuevo c/etiqueta"}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block font-medium">Estado</span>
+                <span
+                  className={`font-semibold ${
+                    isAvailable
+                      ? "text-emerald-400"
+                      : isApartado
+                      ? "text-amber-400"
+                      : "text-rose-400"
+                  }`}
+                >
+                  {isAvailable ? "Disponible" : isApartado ? "Apartada" : "Agotada"}
                 </span>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-neutral-400 text-[10px] block">TALLA</span>
-                    <span className="font-bold text-neutral-900">{product.talla || "M"}</span>
-                  </div>
-                  <div>
-                    <span className="text-neutral-400 text-[10px] block">MARCA</span>
-                    <span className="font-bold text-neutral-900 truncate block">
-                      {product.marca || "Sunday Curated"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-neutral-400 text-[10px] block">COLOR</span>
-                    <span className="font-bold text-neutral-900">{product.color || "Único"}</span>
-                  </div>
-                  <div>
-                    <span className="text-neutral-400 text-[10px] block">ESTILO</span>
-                    <span className="font-bold text-neutral-900 capitalize">
-                      {product.estilo || "Vintage"}
-                    </span>
-                  </div>
-                  {product.condicion && (
-                    <div className="col-span-2 pt-1 border-t border-neutral-100">
-                      <span className="text-neutral-400 text-[10px] block">CONDICIÓN</span>
-                      <span className="font-semibold text-neutral-700">
-                        {product.condicion}
-                      </span>
-                    </div>
-                  )}
-                </div>
               </div>
-
-              {/* Exclusivity note */}
-              <p className="text-[11px] text-neutral-400 italic">
-                * Cada prenda de Sunday Clóset es única. Si la apartas, se reserva exclusivamente para ti.
-              </p>
+              <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                <span className="text-[10px] text-slate-400 block font-medium">Pieza</span>
+                <span className="font-semibold text-rose-300">1 de 1 única</span>
+              </div>
             </div>
+
+            {/* Description Box */}
+            {product.descripcion && (
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 leading-relaxed space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <Tag className="w-3 h-3 text-rose-400" /> Descripción
+                </span>
+                <p>{product.descripcion}</p>
+              </div>
+            )}
+
+            <p className="text-[11px] text-slate-500 italic px-1">
+              * Cada pieza de Sunday Clóset es única. Al apartarla se retira del catálogo para ti.
+            </p>
           </div>
 
-          {/* 5. Sticky Bottom Action Buttons */}
-          <div className="p-4 bg-white border-t border-neutral-100 safe-bottom">
+          {/* 3. Action Footer */}
+          <div className="px-5 py-4 border-t border-slate-800 bg-slate-950/70 shrink-0">
             {isAvailable ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <button
                   onClick={handleWhatsApp}
-                  className="flex-1 py-3.5 px-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 active:scale-98 transition-transform"
+                  className="flex-1 py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 active:scale-98 transition-all"
                 >
                   <MessageCircle className="w-4 h-4 fill-white" />
                   <span>Apartar por WhatsApp</span>
@@ -309,10 +275,10 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
 
                 <button
                   onClick={handleAddToCart}
-                  className={`py-3.5 px-5 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-98 border ${
+                  className={`py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-98 border ${
                     inCart
-                      ? "bg-emerald-600 border-emerald-600 text-white"
-                      : "bg-black border-black text-white hover:bg-neutral-800"
+                      ? "bg-emerald-600 border-emerald-500 text-white"
+                      : "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200"
                   }`}
                 >
                   {inCart ? (
@@ -329,21 +295,20 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
                 </button>
               </div>
             ) : isApartado ? (
-              /* Prenda Apartada: Se muestra pero NO se puede agregar al carrito ni comprar */
               <div className="space-y-1.5">
                 <button
                   disabled
-                  className="w-full py-3.5 px-4 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
+                  className="w-full py-3.5 px-4 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
                 >
-                  <Lock className="w-4 h-4" />
+                  <Lock className="w-4 h-4 text-amber-400" />
                   <span>Prenda Apartada (No disponible)</span>
                 </button>
-                <p className="text-[10px] text-center text-amber-700/80">
-                  Esta prenda ya fue apartada por otra clienta. No se puede comprar ni añadir a la bolsa.
+                <p className="text-[10px] text-center text-amber-400/80">
+                  Esta prenda ya fue apartada por otra clienta. No se puede añadir a la bolsa ni comprar.
                 </p>
               </div>
             ) : (
-              <div className="w-full py-3.5 text-center bg-neutral-100 text-neutral-400 rounded-2xl text-xs font-bold uppercase tracking-wider">
+              <div className="w-full py-3.5 text-center bg-slate-950 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-wider border border-slate-800">
                 Esta prenda ya fue adquirida
               </div>
             )}

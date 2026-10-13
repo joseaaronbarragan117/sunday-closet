@@ -1,40 +1,47 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Sunday Clóset — Tienda Móvil",
-  description: "Curaduría exclusiva de moda circular y piezas únicas.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Sunday Clóset",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-};
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
 
 export const viewport: Viewport = {
+  themeColor: "#020617",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#0a0a0a",
+};
+
+export const metadata: Metadata = {
+  title: "Sunday Clóset — Catálogo Exclusivo",
+  description: "Curaduría vintage y piezas únicas seleccionadas a mano.",
+  manifest: "/manifest.json",
+  referrer: "no-referrer",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Sunday Clóset",
+  },
+  icons: {
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="es" className="h-full bg-neutral-950">
+    <html lang="es" className="dark overflow-x-hidden max-w-full w-full">
       <head>
-        <link rel="apple-touch-icon" href="/favicon.ico" />
+        <meta name="referrer" content="no-referrer" />
       </head>
-      <body className="min-h-full flex flex-col bg-neutral-950 text-white antialiased">
+      <body
+        className={`${inter.variable} ${playfair.variable} font-sans bg-slate-950 text-slate-100 antialiased min-h-screen overflow-x-hidden max-w-full w-full`}
+      >
         {children}
       </body>
     </html>

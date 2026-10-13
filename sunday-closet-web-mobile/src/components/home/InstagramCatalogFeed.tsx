@@ -7,14 +7,14 @@ import {
   X,
   Grid3X3,
   Grid2X2,
-  SlidersHorizontal,
   ArrowUpDown,
   Lock,
   Sparkles,
   ShoppingBag,
-  Heart,
-  ShieldCheck,
+  Tag,
+  Eye,
   RotateCcw,
+  Check,
 } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { formatPrice } from "@/lib/utils/format";
@@ -22,7 +22,6 @@ import { DriveImage } from "@/components/common/DriveImage";
 import { InstagramPostModal } from "@/components/product/InstagramPostModal";
 import { MobileCartSheet } from "@/components/cart/MobileCartSheet";
 import { useCartStore } from "@/lib/store/cartStore";
-import { useFavoritesStore } from "@/lib/store/favoritesStore";
 import { mapItemToProduct, DASHBOARD_API_URL } from "@/lib/data/getProducts";
 
 interface InstagramCatalogFeedProps {
@@ -42,7 +41,6 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const { isOpen: isCartOpen, openCart, closeCart, count: cartCount } = useCartStore();
-  const favCount = useFavoritesStore((s) => s.count());
 
   // Background live sync with Google Sheets via Dashboard API
   useEffect(() => {
@@ -53,7 +51,7 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.products) && data.products.length > 0) {
-            const mapped = data.products.map(mapItemToProduct);
+            const mapped: Product[] = data.products.map(mapItemToProduct);
             // Strict rule: visibleEnWeb and (disponible or apartado)
             const clean = mapped.filter(
               (p: Product) => p.visibleEnWeb && (p.estado === "disponible" || p.estado === "apartado")
@@ -75,7 +73,7 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
   }, []);
 
   // Filter & Sort Calculation
-  const displayProducts = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     let list = [...products];
 
     // Search query
@@ -100,6 +98,8 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
         list = list.filter((p) => p.categoriaRopa === "superior" && !p.tipo.toLowerCase().includes("vestido"));
       } else if (selectedCategory === "pantalones") {
         list = list.filter((p) => p.categoriaRopa === "inferior");
+      } else if (selectedCategory === "abrigos") {
+        list = list.filter((p) => p.tipo.toLowerCase().includes("blazer") || p.tipo.toLowerCase().includes("abrigo") || p.tipo.toLowerCase().includes("chamarra"));
       } else if (selectedCategory === "accesorios") {
         list = list.filter((p) => p.categoriaRopa === "accesorio");
       }
@@ -143,350 +143,325 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
     setSortOrder("recent");
   };
 
+  const totalAvailable = products.filter((p) => p.estado === "disponible").length;
+  const totalApartadas = products.filter((p) => p.estado === "apartado").length;
+
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col pb-24 select-none">
-      {/* 1. Instagram Top Bar */}
-      <header className="sticky top-0 z-40 bg-neutral-950/95 backdrop-blur-md border-b border-neutral-800 safe-top">
-        <div className="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-serif font-bold text-lg text-white tracking-tight">
-              sundaycloset.mx
-            </span>
-            <ShieldCheck className="w-4 h-4 text-rose-400 fill-rose-500/20" />
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-20 select-none">
+      {/* 1. Sleek Dashboard Topbar */}
+      <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Logo image with rounded ring */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Sunday Clóset"
+              className="w-8 h-8 rounded-full object-cover ring-1 ring-rose-500/30"
+            />
+            <div className="flex flex-col">
+              <span className="font-serif font-bold text-base sm:text-lg text-slate-100 leading-tight">
+                Sunday Clóset
+              </span>
+              <span className="text-[10px] text-rose-400 font-medium tracking-wide">
+                Catálogo Exclusivo
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Bag / Cart with live badge counter */}
+          <div className="flex items-center gap-2">
+            {/* Shopping Bag Button with Live Counter */}
             <button
               onClick={openCart}
-              className="relative p-2 rounded-full hover:bg-neutral-800 active:scale-95 transition-all text-white"
-              aria-label="Ver bolsa de compras"
+              className="p-2 sm:px-3 sm:py-2 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 flex items-center gap-2 active:scale-95 transition-all shadow-xs"
+              aria-label="Abrir bolsa de compras"
             >
-              <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
-              {cartCount() > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-[16px] px-1 bg-gradient-to-tr from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md shadow-pink-500/40">
-                  {cartCount()}
-                </span>
-              )}
+              <div className="relative">
+                <ShoppingBag className="w-4 h-4 text-rose-400" />
+                {cartCount() > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-1 bg-rose-500 text-white font-mono text-[9px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                    {cartCount()}
+                  </span>
+                )}
+              </div>
+              <span className="hidden sm:inline text-xs font-semibold">Bolsa</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* 2. Instagram Profile Bio Section */}
-      <section className="max-w-3xl w-full mx-auto px-4 pt-4 pb-2 border-b border-neutral-900">
-        <div className="flex items-center gap-4 sm:gap-6">
-          {/* Avatar with gradient Story Ring */}
-          <div className="relative shrink-0">
-            <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full p-[2.5px] bg-gradient-to-tr from-amber-500 via-rose-500 to-pink-500 shadow-lg shadow-pink-500/20">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.png"
-                alt="Sunday Clóset"
-                className="w-full h-full rounded-full object-cover bg-neutral-900 ring-2 ring-neutral-950"
-              />
+      {/* 2. Main Container with Generous Aesthetic Margins */}
+      <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 md:px-8 py-5 sm:py-7 space-y-5 flex-1">
+        {/* Header Hero Banner (Identical to Dashboard Header Banner) */}
+        <section className="p-4 sm:p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900 border border-slate-800 shadow-xl relative overflow-hidden space-y-4">
+          <div className="space-y-1 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <Sparkles className="w-3.5 h-3.5" /> Curaduría Vintage &amp; Preloved
             </div>
-            <span className="absolute bottom-0 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-neutral-950 flex items-center justify-center text-[10px]" title="En línea">
-              ✨
-            </span>
-          </div>
-
-          {/* Profile Stats */}
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-around text-center py-1">
-              <div>
-                <span className="block font-bold text-sm sm:text-base text-white">
-                  {products.length}
-                </span>
-                <span className="text-[10px] text-neutral-400">Prendas</span>
-              </div>
-              <div>
-                <span className="block font-bold text-sm sm:text-base text-emerald-400">
-                  {products.filter((p) => p.estado === "disponible").length}
-                </span>
-                <span className="text-[10px] text-neutral-400">Disponibles</span>
-              </div>
-              <div>
-                <span className="block font-bold text-sm sm:text-base text-amber-400">
-                  {products.filter((p) => p.estado === "apartado").length}
-                </span>
-                <span className="text-[10px] text-neutral-400">Apartadas</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bio Text */}
-        <div className="mt-3 text-xs space-y-0.5">
-          <p className="font-bold text-white text-sm">Sunday Clóset — Catálogo Móvil</p>
-          <p className="text-neutral-300">
-            🌸 Curaduría de moda circular, piezas vintage &amp; preloved únicas.
-          </p>
-          <p className="text-neutral-400 text-[11px]">
-            📦 Envíos a todo México • Cada prenda es 1 de 1.
-          </p>
-          <p className="text-rose-400 font-medium text-[11px] pt-0.5">
-            ✨ Toca cualquier foto para expandir datos y apartar por WhatsApp
-          </p>
-        </div>
-      </section>
-
-      {/* 3. Story Highlights Circles (Instagram Stories) */}
-      <section className="w-full py-3 overflow-x-auto scrollbar-none border-b border-neutral-900 bg-neutral-950/60">
-        <div className="flex items-center gap-3.5 px-4 max-w-3xl mx-auto">
-          {[
-            { id: "all", label: "✨ Todo", filter: "all" },
-            { id: "vestidos", label: "👗 Vestidos", filter: "vestidos" },
-            { id: "tops", label: "👚 Tops", filter: "tops" },
-            { id: "pantalones", label: "👖 Pantalones", filter: "pantalones" },
-            { id: "accesorios", label: "👜 Accesorios", filter: "accesorios" },
-            { id: "disp", label: "🟢 Disponibles", status: "disponible" as const },
-            { id: "apart", label: "🔒 Apartadas", status: "apartado" as const },
-          ].map((story) => {
-            const isCatActive = story.filter && selectedCategory === story.filter && selectedStatus === "all";
-            const isStatusActive = story.status && selectedStatus === story.status;
-            const isActive = isCatActive || isStatusActive;
-
-            return (
-              <button
-                key={story.id}
-                onClick={() => {
-                  if (story.filter) {
-                    setSelectedCategory(story.filter);
-                    setSelectedStatus("all");
-                  } else if (story.status) {
-                    setSelectedStatus(story.status);
-                    setSelectedCategory("all");
-                  }
-                }}
-                className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
-              >
-                <div
-                  className={`w-14 h-14 rounded-full p-[2px] transition-all ${
-                    isActive
-                      ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-pink-500 ring-2 ring-pink-500/40"
-                      : "bg-neutral-800 hover:bg-neutral-700"
-                  }`}
-                >
-                  <div className="w-full h-full rounded-full bg-neutral-900 flex items-center justify-center text-lg overflow-hidden border border-neutral-950">
-                    <span className="group-hover:scale-110 transition-transform">
-                      {story.label.split(" ")[0]}
-                    </span>
-                  </div>
-                </div>
-                <span
-                  className={`text-[10px] text-center max-w-[64px] truncate ${
-                    isActive ? "font-bold text-rose-300" : "text-neutral-400"
-                  }`}
-                >
-                  {story.label.split(" ")[1] || story.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 4. Rescued Search & Filters Bar (Galería Feed Controls) */}
-      <section className="sticky top-[49px] z-30 bg-neutral-950/95 backdrop-blur-md border-b border-neutral-800 px-4 py-2.5 space-y-2 max-w-3xl w-full mx-auto">
-        {/* Search Input Row */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por prenda, marca, color o estilo..."
-              className="w-full pl-9 pr-8 py-2 bg-neutral-900 text-white placeholder-neutral-500 rounded-xl text-xs border border-neutral-800 focus:outline-none focus:border-rose-500/60 focus:ring-1 focus:ring-rose-500/30 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-0.5"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Grid Layout Switcher (3-col Instagram vs 2-col Pinterest) */}
-          <div className="flex items-center rounded-xl bg-neutral-900 border border-neutral-800 p-0.5 shrink-0">
-            <button
-              onClick={() => setGridColumns(3)}
-              className={`p-1.5 rounded-lg transition-colors ${
-                gridColumns === 3
-                  ? "bg-rose-500 text-white shadow-xs"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-              title="Feed Instagram (3 columnas)"
-            >
-              <Grid3X3 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setGridColumns(2)}
-              className={`p-1.5 rounded-lg transition-colors ${
-                gridColumns === 2
-                  ? "bg-rose-500 text-white shadow-xs"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-              title="Catálogo Pinterest (2 columnas)"
-            >
-              <Grid2X2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Pills Row (Touch Horizontal Scroll) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none text-[11px] pt-1">
-          {/* Status selector */}
-          <button
-            onClick={() => setSelectedStatus(selectedStatus === "all" ? "disponible" : selectedStatus === "disponible" ? "apartado" : "all")}
-            className={`px-2.5 py-1 rounded-lg border font-medium shrink-0 flex items-center gap-1 transition-all ${
-              selectedStatus === "disponible"
-                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                : selectedStatus === "apartado"
-                ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                : "bg-neutral-900 text-neutral-400 border-neutral-800"
-            }`}
-          >
-            <span>Estado:</span>
-            <span className="font-bold text-white capitalize">
-              {selectedStatus === "all" ? "Todos" : selectedStatus === "disponible" ? "Disponibles" : "Apartadas"}
-            </span>
-          </button>
-
-          {/* Size Pills */}
-          {["XS", "S", "M", "L", "XL"].map((sz) => (
-            <button
-              key={sz}
-              onClick={() => setSelectedSize(selectedSize === sz ? "all" : sz)}
-              className={`px-2.5 py-1 rounded-lg border font-medium shrink-0 transition-all ${
-                selectedSize === sz
-                  ? "bg-rose-500/20 text-rose-300 border-rose-500/40 font-bold"
-                  : "bg-neutral-900 text-neutral-400 border-neutral-800"
-              }`}
-            >
-              {sz}
-            </button>
-          ))}
-
-          {/* Sort Order Toggle */}
-          <button
-            onClick={() =>
-              setSortOrder(
-                sortOrder === "recent"
-                  ? "price-asc"
-                  : sortOrder === "price-asc"
-                  ? "price-desc"
-                  : "recent"
-              )
-            }
-            className="px-2.5 py-1 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-300 shrink-0 flex items-center gap-1 hover:border-neutral-700"
-          >
-            <ArrowUpDown className="w-3 h-3 text-rose-400" />
-            <span>
-              {sortOrder === "recent"
-                ? "Recientes"
-                : sortOrder === "price-asc"
-                ? "$ Menor"
-                : "$ Mayor"}
-            </span>
-          </button>
-
-          {/* Reset Filters */}
-          {hasActiveFilters && (
-            <button
-              onClick={handleResetFilters}
-              className="px-2 py-1 rounded-lg text-rose-400 hover:text-rose-300 shrink-0 flex items-center gap-1 font-semibold"
-            >
-              <RotateCcw className="w-3 h-3" /> Limpiar
-            </button>
-          )}
-        </div>
-      </section>
-
-      {/* 5. The Feed Grid (3-Col Instagram / 2-Col Pinterest) */}
-      <main className="max-w-3xl w-full mx-auto px-0.5 sm:px-2 pt-2 flex-1">
-        {displayProducts.length === 0 ? (
-          <div className="py-24 px-4 text-center space-y-3">
-            <span className="text-4xl block">🔍</span>
-            <p className="text-sm font-bold text-white">No se encontraron prendas</p>
-            <p className="text-xs text-neutral-500 max-w-xs mx-auto">
-              Prueba cambiando los filtros de categoría, talla o término de búsqueda.
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold text-slate-100">
+              Prendas Únicas Sunday Clóset
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-xl">
+              Cada prenda es pieza única (1 de 1). Toca cualquier imagen para ver medidas completas, detalles y apartar por WhatsApp.
             </p>
+          </div>
+
+          {/* Quick Stat Pill Selectors (Dashboard Stats Style) */}
+          <div className="flex flex-wrap items-center gap-2 relative z-10 pt-1">
             <button
-              onClick={handleResetFilters}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-neutral-800 hover:bg-neutral-700 text-white transition-colors"
+              onClick={() => setSelectedStatus("all")}
+              className={`px-3.5 py-2 rounded-2xl border text-xs font-medium transition-all flex items-center gap-2 ${
+                selectedStatus === "all"
+                  ? "bg-slate-800 text-white border-slate-700 shadow-xs"
+                  : "bg-slate-900/70 text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
             >
-              Ver todo el catálogo
+              <Tag className="w-3.5 h-3.5 text-rose-400" />
+              <span>Todas ({products.length})</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedStatus("disponible")}
+              className={`px-3.5 py-2 rounded-2xl border text-xs font-medium transition-all flex items-center gap-2 ${
+                selectedStatus === "disponible"
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/35 shadow-xs font-semibold"
+                  : "bg-slate-900/70 text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Disponibles ({totalAvailable})</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedStatus("apartado")}
+              className={`px-3.5 py-2 rounded-2xl border text-xs font-medium transition-all flex items-center gap-2 ${
+                selectedStatus === "apartado"
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/35 shadow-xs font-semibold"
+                  : "bg-slate-900/70 text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Apartadas ({totalApartadas})</span>
             </button>
           </div>
-        ) : (
-          <div
-            className={`grid ${
-              gridColumns === 3
-                ? "grid-cols-3 gap-0.5 sm:gap-1.5"
-                : "grid-cols-2 gap-1.5 sm:gap-2.5"
-            }`}
-          >
-            {displayProducts.map((product) => {
-              const isApartada = product.estado === "apartado";
+        </section>
 
-              return (
-                <div
-                  key={product.id}
-                  onClick={() => setSelectedProduct(product)}
-                  className={`aspect-square relative group cursor-pointer bg-neutral-900 overflow-hidden select-none active:scale-[0.98] transition-all ${
-                    gridColumns === 2 ? "rounded-2xl border border-neutral-800" : ""
+        {/* Search & Shopping Filters Bar (Rescued from Galería Feed & Adapted for Clients) */}
+        <section className="p-4 sm:p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3.5">
+          {/* Top Search Input & View Switcher */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por tipo de prenda, marca, color o estilo..."
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-950 text-slate-100 placeholder-slate-500 rounded-2xl text-xs sm:text-sm border border-slate-800 focus:outline-none focus:border-rose-500/50 focus:ring-2 focus:ring-rose-500/20 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* View Grid Switcher: 3-Col Instagram vs 2-Col Pinterest */}
+            <div className="flex items-center bg-slate-950 rounded-2xl border border-slate-800 p-1 shrink-0">
+              <button
+                onClick={() => setGridColumns(3)}
+                className={`p-2 rounded-xl transition-colors ${
+                  gridColumns === 3
+                    ? "bg-rose-500 text-white shadow-xs"
+                    : "text-slate-400 hover:text-white"
+                }`}
+                title="Feed Instagram (3 por fila)"
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setGridColumns(2)}
+                className={`p-2 rounded-xl transition-colors ${
+                  gridColumns === 2
+                    ? "bg-rose-500 text-white shadow-xs"
+                    : "text-slate-400 hover:text-white"
+                }`}
+                title="Catálogo Pinterest (2 columnas)"
+              >
+                <Grid2X2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Category Shopping Pills (Horizontal Scroll) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs pt-1 border-t border-slate-800/60">
+            <span className="text-[11px] text-slate-500 font-medium px-1 shrink-0">Categoría:</span>
+            {[
+              { id: "all", label: "Todas" },
+              { id: "vestidos", label: "Vestidos" },
+              { id: "tops", label: "Tops & Blusas" },
+              { id: "pantalones", label: "Pantalones & Faldas" },
+              { id: "abrigos", label: "Abrigos & Blazers" },
+              { id: "accesorios", label: "Accesorios" },
+            ].map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-xl font-medium shrink-0 transition-all ${
+                  selectedCategory === cat.id
+                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/35 font-semibold"
+                    : "bg-slate-950/60 text-slate-400 border border-slate-800 hover:text-slate-200"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Size Pills & Sort Row */}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
+            {/* Tallas */}
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+              <span className="text-[11px] text-slate-500 font-medium px-1 shrink-0">Talla:</span>
+              {["all", "XS", "S", "M", "L", "XL"].map((sz) => (
+                <button
+                  key={sz}
+                  onClick={() => setSelectedSize(sz)}
+                  className={`px-2.5 py-1 rounded-xl font-medium shrink-0 transition-all ${
+                    selectedSize === sz
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/35 font-semibold"
+                      : "bg-slate-950/60 text-slate-400 border border-slate-800 hover:text-slate-200"
                   }`}
                 >
-                  {/* Photo */}
-                  <DriveImage
-                    src={product.imagenUrl}
-                    alt={product.nombre || product.tipo}
-                    className="w-full h-full object-cover"
-                  />
+                  {sz === "all" ? "Todas" : sz}
+                </button>
+              ))}
+            </div>
 
-                  {/* Corner Price Badge */}
-                  <div className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 z-10 pointer-events-none">
-                    <span className="px-1.5 py-0.5 rounded-md text-[9px] sm:text-xs font-bold font-mono bg-black/75 backdrop-blur-xs text-rose-300 border border-neutral-800">
-                      {formatPrice(product.precio)}
-                    </span>
-                  </div>
+            {/* Price Sort & Reset */}
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() =>
+                  setSortOrder(
+                    sortOrder === "recent"
+                      ? "price-asc"
+                      : sortOrder === "price-asc"
+                      ? "price-desc"
+                      : "recent"
+                  )
+                }
+                className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-medium"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-rose-400" />
+                <span>
+                  {sortOrder === "recent"
+                    ? "Recientes"
+                    : sortOrder === "price-asc"
+                    ? "Menor precio"
+                    : "Mayor precio"}
+                </span>
+              </button>
 
-                  {/* Apartada Ribbon / Overlay */}
-                  {isApartada && (
-                    <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px] flex flex-col justify-between p-1.5 pointer-events-none">
-                      <div className="self-start">
-                        <span className="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-amber-500/90 text-white shadow-md flex items-center gap-1">
+              {hasActiveFilters && (
+                <button
+                  onClick={handleResetFilters}
+                  className="text-xs text-rose-400 hover:text-rose-300 font-medium flex items-center gap-1 px-1"
+                >
+                  <RotateCcw className="w-3 h-3" /> Limpiar
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* 3. The Feed Grid (Aesthetic Breathable Margins and Spacing) */}
+        <section className="p-3 sm:p-5 rounded-3xl bg-slate-900/50 border border-slate-800 shadow-xl">
+          {filteredProducts.length === 0 ? (
+            <div className="py-20 text-center rounded-2xl bg-slate-900/40 text-slate-400 space-y-2">
+              <Tag className="w-8 h-8 mx-auto text-slate-600 mb-2" />
+              <p className="text-sm font-semibold text-slate-300">No se encontraron prendas</p>
+              <p className="text-xs text-slate-500">Prueba con otra categoría, talla o búsqueda.</p>
+              <button
+                onClick={handleResetFilters}
+                className="px-4 py-2 mt-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
+              >
+                Ver todo el catálogo
+              </button>
+            </div>
+          ) : (
+            <div
+              className={`grid ${
+                gridColumns === 3
+                  ? "grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5"
+                  : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4.5"
+              }`}
+            >
+              {filteredProducts.map((product) => {
+                const isApartada = product.estado === "apartado";
+
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => setSelectedProduct(product)}
+                    className="aspect-square relative group cursor-pointer bg-slate-900 rounded-2xl overflow-hidden border border-slate-800/90 hover:border-rose-500/50 hover:shadow-lg hover:shadow-rose-500/5 active:scale-[0.98] transition-all select-none"
+                  >
+                    {/* Photo with DriveImage */}
+                    <DriveImage
+                      src={product.imagenUrl}
+                      alt={product.nombre || product.tipo}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+                    />
+
+                    {/* Top Status Pill on Card */}
+                    {isApartada ? (
+                      <div className="absolute top-1.5 left-1.5 z-10 pointer-events-none">
+                        <span className="px-2 py-0.5 rounded-lg text-[9px] sm:text-[10px] font-bold bg-amber-500/25 text-amber-300 border border-amber-500/40 backdrop-blur-xs flex items-center gap-1 shadow-xs">
                           <Lock className="w-2.5 h-2.5" /> Apartada
                         </span>
                       </div>
-                      <div className="text-left bg-black/70 p-1 rounded-md">
-                        <p className="text-[9px] text-amber-200 font-semibold truncate leading-tight">
-                          No disponible
-                        </p>
+                    ) : (
+                      <div className="absolute top-1.5 right-1.5 z-10 pointer-events-none">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-slate-950 inline-block" title="Disponible" />
                       </div>
+                    )}
+
+                    {/* Bottom-right Price Tag */}
+                    <div className="absolute bottom-1.5 right-1.5 z-10 pointer-events-none">
+                      <span className="px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold font-mono bg-slate-950/85 backdrop-blur-xs text-rose-300 border border-slate-800 shadow-xs">
+                        {formatPrice(product.precio)}
+                      </span>
                     </div>
-                  )}
 
-                  {/* Subtle touch cue overlay */}
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
+                    {/* Hover Card Overlay (Exact Galería Feed Style) */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-2.5 text-left pointer-events-none">
+                      <p className="text-[10px] text-rose-400 font-mono tracking-tight truncate">
+                        {product.id}
+                      </p>
+                      <p className="text-xs font-bold text-white truncate leading-tight capitalize">
+                        {product.nombre || product.tipo}
+                      </p>
+                      <p className="text-[11px] text-slate-300 truncate">
+                        {product.marca || "Sunday Curated"} • {product.talla || "M"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
 
-      {/* 6. Instagram Post Center Expansion Modal */}
+      {/* 4. Instagram Post Modal with Exact Dashboard Dark Slate Aesthetic */}
       <InstagramPostModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
       />
 
-      {/* 7. Slide-over Cart Sheet */}
+      {/* 5. Mobile Cart Sheet */}
       <MobileCartSheet
         isOpen={isCartOpen}
         onClose={closeCart}
