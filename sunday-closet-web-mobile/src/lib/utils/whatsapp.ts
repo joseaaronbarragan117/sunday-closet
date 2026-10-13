@@ -4,7 +4,7 @@ import { formatPrice } from "./format";
 
 // Configurable phone number (defaults to MX format or custom business phone)
 export const DEFAULT_WHATSAPP_PHONE =
-  process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "5215500000000";
+  process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "523411622960";
 
 /**
  * Genera el enlace de WhatsApp para apartar una prenda específica al instante.
@@ -13,20 +13,21 @@ export function createProductWhatsAppUrl(
   product: Product,
   phone: string = DEFAULT_WHATSAPP_PHONE
 ): string {
-  const message = [
-    `¡Hola Sunday Clóset! ✨`,
-    `Me enamoré de esta prenda única y me gustaría apartarla:`,
-    ``,
-    `🛍️ *${product.nombre || product.tipo}*`,
-    `🏷️ Marca: ${product.marca}`,
-    `📏 Talla: ${product.talla}${product.color ? ` | Color: ${product.color}` : ''}`,
-    `🔢 SKU: ${product.id}`,
-    `💰 Precio: ${formatPrice(product.precio)}`,
-    ``,
-    `¿Sigue disponible para concretar el apartado? Muchas gracias.`,
-  ].join('\n');
+  const name = product.nombre || product.tipo || "Prenda Sunday";
+  const size = product.talla || "M";
+  const ref = product.id;
+  const price = product.precio;
 
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  const message = [
+    "¡Hola! Me interesa apartar esta prenda de la tienda:",
+    "",
+    `• ${name} | Talla: ${size} | Ref: #${ref} - $${price}`,
+    "",
+    "¿Sigue disponible?",
+  ].join("\n");
+
+  const cleanPhone = phone.replace(/\D/g, "").trim();
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
 
 /**

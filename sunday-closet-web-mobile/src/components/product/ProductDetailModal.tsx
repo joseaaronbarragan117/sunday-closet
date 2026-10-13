@@ -2,13 +2,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Heart, MessageCircle, ShoppingBag, Check } from "lucide-react";
+import { X, Heart } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { formatPrice } from "@/lib/utils/format";
 import { formatDriveImageUrl } from "@/lib/imageUrl";
 import { useFavoritesStore } from "@/lib/store/favoritesStore";
-import { useCartStore } from "@/lib/store/cartStore";
-import { createProductWhatsAppUrl } from "@/lib/utils/whatsapp";
+import { SingleProductCheckoutActions } from "@/components/product/SingleProductCheckoutActions";
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -21,28 +20,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
   const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { addItem, isInCart } = useCartStore();
 
   if (!product) return null;
 
   const favorite = isFavorite(product.id);
-  const inCart = isInCart(product.id);
   const isAvailable = product.estado === "disponible";
   const photoUrl = formatDriveImageUrl(product.imagenUrl);
   const hasDiscount = Boolean(product.precioOriginal && product.precioOriginal > product.precio);
   const discountPercent = hasDiscount
     ? Math.round((1 - product.precio / product.precioOriginal!) * 100)
     : 0;
-
-  const handleWhatsApp = () => {
-    window.open(createProductWhatsAppUrl(product), "_blank");
-  };
-
-  const handleAddToCart = () => {
-    if (isAvailable && !inCart) {
-      addItem(product);
-    }
-  };
 
   return (
     <div
@@ -194,26 +181,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {/* Bottom Actions */}
         <div className="p-4 border-t border-[#EAEAEA] safe-bottom bg-white space-y-2">
           {isAvailable ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleWhatsApp}
-                className="flex-1 py-4 text-center text-xs font-bold uppercase tracking-widest text-white bg-black hover:bg-neutral-900 active:opacity-90 flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4 fill-white" />
-                <span>APARTAR POR WHATSAPP</span>
-              </button>
-
-              <button
-                onClick={handleAddToCart}
-                className={`py-4 px-5 text-xs font-bold uppercase tracking-widest border border-black transition-all ${
-                  inCart
-                    ? "bg-[#2E7D32] border-[#2E7D32] text-white"
-                    : "bg-white text-black hover:bg-[#F4F4F4]"
-                }`}
-              >
-                {inCart ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
-              </button>
-            </div>
+            <SingleProductCheckoutActions product={product} />
           ) : product.estado === "apartado" ? (
             <div className="w-full py-4 text-center bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider rounded-md border border-amber-300">
               🔒 PRENDA APARTADA (NO DISPONIBLE)

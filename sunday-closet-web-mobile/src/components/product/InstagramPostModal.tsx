@@ -6,21 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Heart,
-  MessageCircle,
-  ShoppingBag,
-  Check,
   Share2,
   Lock,
-  Sparkles,
   Tag,
-  Copy,
 } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { formatPrice } from "@/lib/utils/format";
 import { DriveImage } from "@/components/common/DriveImage";
 import { useFavoritesStore } from "@/lib/store/favoritesStore";
-import { useCartStore } from "@/lib/store/cartStore";
-import { createProductWhatsAppUrl } from "@/lib/utils/whatsapp";
+import { SingleProductCheckoutActions } from "@/components/product/SingleProductCheckoutActions";
 
 interface InstagramPostModalProps {
   product: Product | null;
@@ -32,14 +26,12 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
   onClose,
 }) => {
   const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { addItem, isInCart } = useCartStore();
   const [showHeartPop, setShowHeartPop] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   if (!product) return null;
 
   const favorite = isFavorite(product.id);
-  const inCart = isInCart(product.id);
   const isAvailable = product.estado === "disponible";
   const isApartado = product.estado === "apartado";
 
@@ -49,17 +41,6 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
     }
     setShowHeartPop(true);
     setTimeout(() => setShowHeartPop(false), 900);
-  };
-
-  const handleWhatsApp = () => {
-    if (!isAvailable) return;
-    window.open(createProductWhatsAppUrl(product), "_blank");
-  };
-
-  const handleAddToCart = () => {
-    if (isAvailable && !inCart) {
-      addItem(product);
-    }
   };
 
   const handleShare = async () => {
@@ -264,36 +245,7 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
           {/* 3. Action Footer */}
           <div className="px-5 py-4 border-t border-slate-800 bg-slate-950/70 shrink-0">
             {isAvailable ? (
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={handleWhatsApp}
-                  className="flex-1 py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 active:scale-98 transition-all"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white" />
-                  <span>Apartar por WhatsApp</span>
-                </button>
-
-                <button
-                  onClick={handleAddToCart}
-                  className={`py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-98 border ${
-                    inCart
-                      ? "bg-emerald-600 border-emerald-500 text-white"
-                      : "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200"
-                  }`}
-                >
-                  {inCart ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>En Bolsa</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>Añadir</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              <SingleProductCheckoutActions product={product} />
             ) : isApartado ? (
               <div className="space-y-1.5">
                 <button

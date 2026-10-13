@@ -3,13 +3,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Heart, MessageCircle, ShoppingBag, Check, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, Heart, ShieldCheck, Sparkles } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { formatPrice } from "@/lib/utils/format";
 import { formatDriveImageUrl } from "@/lib/imageUrl";
 import { useFavoritesStore } from "@/lib/store/favoritesStore";
-import { useCartStore } from "@/lib/store/cartStore";
-import { createProductWhatsAppUrl } from "@/lib/utils/whatsapp";
+import { SingleProductCheckoutActions } from "@/components/product/SingleProductCheckoutActions";
 
 interface MobileProductDetailViewProps {
   product: Product;
@@ -22,22 +21,10 @@ export const MobileProductDetailView: React.FC<MobileProductDetailViewProps> = (
 }) => {
   const [imgError, setImgError] = useState(false);
   const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { addItem, isInCart } = useCartStore();
 
   const favorite = isFavorite(product.id);
-  const inCart = isInCart(product.id);
   const isAvailable = product.estado === "disponible";
   const photoUrl = formatDriveImageUrl(product.imagenUrl);
-
-  const handleWhatsApp = () => {
-    window.open(createProductWhatsAppUrl(product), "_blank");
-  };
-
-  const handleAddToCart = () => {
-    if (isAvailable && !inCart) {
-      addItem(product);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#F7F6F2] text-[#1F1F1F] pb-32">
@@ -219,36 +206,7 @@ export const MobileProductDetailView: React.FC<MobileProductDetailViewProps> = (
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E5E3DD] p-4 safe-bottom">
         <div className="max-w-md mx-auto flex items-center gap-2">
           {isAvailable ? (
-            <>
-              <button
-                onClick={handleWhatsApp}
-                className="flex-1 py-4 px-4 rounded-2xl bg-[#25D366] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/25 active:scale-98 transition-transform"
-              >
-                <MessageCircle className="w-4 h-4 fill-white" />
-                <span>Apartar por WhatsApp</span>
-              </button>
-
-              <button
-                onClick={handleAddToCart}
-                className={`py-4 px-5 rounded-2xl font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-98 ${
-                  inCart
-                    ? "bg-[#2E7D32] text-white"
-                    : "bg-[#1F1F1F] text-white hover:bg-black"
-                }`}
-              >
-                {inCart ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>En Bolsa</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>Añadir</span>
-                  </>
-                )}
-              </button>
-            </>
+            <SingleProductCheckoutActions product={product} />
           ) : product.estado === 'apartado' ? (
             <div className="w-full py-4 px-4 text-center bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-xs font-bold tracking-wide shadow-xs">
               🔒 Prenda Apartada — No disponible para compra
