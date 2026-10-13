@@ -5,15 +5,12 @@ import {
   X,
   Plus,
   Layers,
-  Sparkles,
   DollarSign,
   Image as ImageIcon,
-  Check,
   Calendar,
   Trash2,
 } from 'lucide-react';
 import { AddLotFormData, LotItemInput, ItemStyle, ItemCondition } from '@/types/inventory';
-import { calculatePrices } from '@/lib/priceCalculator';
 import { formatDriveImageUrl } from '@/lib/imageUrl';
 import { DriveImage } from '@/components/common/DriveImage';
 
@@ -52,10 +49,6 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
     pricePublished: 0,
   });
 
-  const [selectedPriceSource, setSelectedPriceSource] = useState<'Sunday' | 'Web' | 'Facebook' | 'Paca' | 'Custom'>('Web');
-  const [customPriceInput, setCustomPriceInput] = useState('');
-  const [showCustomInput, setShowCustomInput] = useState(false);
-
   // Initialize today's date
   useEffect(() => {
     if (isOpen) {
@@ -80,31 +73,13 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
       cost: 0,
       pricePublished: 0,
     });
-    setSelectedPriceSource('Web');
-    setCustomPriceInput('');
-    setShowCustomInput(false);
   };
 
   if (!isOpen) return null;
 
   // Calculate current unit cost when equitable division is on
-  // items count for division is existing items + 1 (for the draft item) or at least 1
   const projectedCount = Math.max(1, lotItems.length + 1);
   const autoUnitCost = lotTotalCost > 0 ? parseFloat((lotTotalCost / projectedCount).toFixed(2)) : 0;
-  const currentItemCost = isIndividualPrice ? draftItem.cost : autoUnitCost;
-
-  const calculatedPrices = calculatePrices(currentItemCost);
-
-  const getActivePrice = (): number => {
-    if (selectedPriceSource === 'Custom') {
-      return parseFloat(customPriceInput) || 0;
-    }
-    if (selectedPriceSource === 'Sunday') return calculatedPrices.priceSunday;
-    if (selectedPriceSource === 'Web') return calculatedPrices.priceWeb;
-    if (selectedPriceSource === 'Facebook') return calculatedPrices.priceFB;
-    if (selectedPriceSource === 'Paca') return calculatedPrices.pricePaca;
-    return 0;
-  };
 
   const handleAddDraftToList = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,17 +90,20 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
     }
 
     if (isIndividualPrice && draftItem.cost <= 0) {
-      alert('Has activado el precio específico por prenda. Por favor introduce un costo válido mayor a 0 para esta prenda.');
+      alert('Has activado el costo específico por prenda. Por favor introduce un costo válido mayor a 0 para esta prenda.');
       return;
     }
 
-    const finalPricePublished = getActivePrice() || calculatedPrices.priceWeb;
+    if (!draftItem.pricePublished || draftItem.pricePublished <= 0) {
+      alert('Por favor introduce un Precio de Venta manual válido mayor a 0 para la prenda.');
+      return;
+    }
 
     const newItem: LotItemInput = {
       ...draftItem,
       photoUrl: formatDriveImageUrl(draftItem.photoUrl),
       cost: isIndividualPrice ? draftItem.cost : undefined,
-      pricePublished: finalPricePublished,
+      pricePublished: Number(draftItem.pricePublished),
     };
 
     setLotItems((prev) => [...prev, newItem]);
@@ -185,7 +163,7 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                Registra pacas o lotes completos y asigna costos en lote para Google Sheets
+                Registra pacas o lotes completos con precios y costos directos para Google Sheets
               </p>
             </div>
           </div>
@@ -260,12 +238,12 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <div className="space-y-0.5">
                   <p className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                    ¿Asignar costo/precio específico por prenda?
+                    ¿Asignar costo específico por prenda?
                   </p>
                   <p className="text-[11px] text-slate-400">
                     {isIndividualPrice
-                      ? '✓ Modo Manual Activo: Puedes especificar el costo exacto de cada prenda por separado.'
-                      : '✓ Modo Equitativo Activo: Divide el costo total del lote entre la cantidad de piezas automáticamente.'}
+                      ? '✓ Modo Manual: Defines el costo individual de compra de cada prenda.'
+                      : '✓ Modo Equitativo: Divide el costo total del lote entre la cantidad de piezas automáticamente.'}
                   </p>
                 </div>
 
@@ -283,7 +261,7 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
                       isIndividualPrice ? 'bg-rose-400' : 'bg-emerald-400'
                     }`}
                   />
-                  {isIndividualPrice ? 'Especificar Por Prenda' : 'Dividir Costo del Lote'}
+                  {isIndividualPrice ? 'Costo Manual Por Prenda' : 'Dividir Costo del Lote'}
                 </button>
               </div>
             </div>
@@ -301,7 +279,7 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
               </span>
             </div>
 
-            <form onSubmit={handleAddDraftToList} className="space-y-3">
+            <form onSubmit={handleAddDraftToList} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Tipo de Prenda */}
                 <div>
@@ -387,7 +365,7 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
                 </div>
 
                 {/* Foto URL */}
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-3">
                   <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
                     <span className="flex items-center gap-1">
                       <ImageIcon className="w-3.5 h-3.5 text-slate-400" /> Foto URL (Drive o web)
@@ -402,10 +380,10 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
                   />
                 </div>
 
-                {/* Costo (Editable si isIndividualPrice está activo, o calculado) */}
+                {/* Costo de Compra */}
                 <div>
                   <label className="block text-xs font-semibold text-rose-300 mb-1 flex items-center justify-between">
-                    <span>{isIndividualPrice ? 'Costo Prenda ($) *' : 'Costo Asignado ($)'}</span>
+                    <span>{isIndividualPrice ? 'Costo Compra ($) *' : 'Costo Asignado ($)'}</span>
                     <span className="text-[10px] text-slate-400">
                       {isIndividualPrice ? 'Manual' : 'Automático'}
                     </span>
@@ -426,45 +404,33 @@ export const AddLotModal: React.FC<AddLotModalProps> = ({
                     />
                   </div>
                 </div>
-              </div>
 
-              {/* Live Price Cards preview for this draft item */}
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Precio de Venta Sugerido (Web)</span>
-                  </div>
-                  <span className="text-xs font-bold text-emerald-400">
-                    ${getActivePrice() || calculatedPrices.priceWeb} MXN
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                  <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[9px] text-slate-400 block">Sunday</span>
-                    <span className="font-bold text-slate-200">${calculatedPrices.priceSunday}</span>
-                  </div>
-                  <div className="p-1.5 rounded-lg bg-slate-950 border border-emerald-500/40">
-                    <span className="text-[9px] text-emerald-300 block">Web (Sugerido)</span>
-                    <span className="font-bold text-emerald-400">${calculatedPrices.priceWeb}</span>
-                  </div>
-                  <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[9px] text-slate-400 block">Facebook</span>
-                    <span className="font-bold text-slate-200">${calculatedPrices.priceFB}</span>
-                  </div>
-                  <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[9px] text-slate-400 block">Paca</span>
-                    <span className="font-bold text-slate-200">${calculatedPrices.pricePaca}</span>
+                {/* PRECIO DE VENTA DIRECTO / MANUAL */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-emerald-300 mb-1 flex items-center justify-between">
+                    <span>Precio de Venta / Publicado ($ MXN) *</span>
+                    <span className="text-[10px] text-emerald-400 font-medium">Ingreso manual</span>
+                  </label>
+                  <div className="relative">
+                    <DollarSign className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      placeholder="Introduce el precio de venta manualmente (ej. 350)"
+                      value={draftItem.pricePublished || ''}
+                      onChange={(e) => setDraftItem({ ...draftItem, pricePublished: parseFloat(e.target.value) || 0 })}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-emerald-500/50 rounded-xl text-sm font-bold text-emerald-300 placeholder-slate-600 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none"
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Add draft item button */}
-              <div className="flex justify-end pt-1">
+              <div className="flex justify-end pt-2">
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 shadow-md shadow-rose-500/20 transition-all flex items-center gap-2"
+                  className="px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 shadow-md shadow-rose-500/20 transition-all flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" /> Agregar esta prenda a la lista del lote
                 </button>

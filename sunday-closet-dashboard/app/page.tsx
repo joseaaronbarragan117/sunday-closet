@@ -378,7 +378,7 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen bg-slate-950 text-slate-100">
+      <div className="flex min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden w-full max-w-full">
         {/* Left Navigation Sidebar */}
         <Sidebar
           activeTab={activeTab}
@@ -417,7 +417,7 @@ export default function DashboardPage() {
         />
 
         {/* Main Content Workspace */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
           {/* Topbar Navigation */}
           <Topbar
             searchQuery={searchQuery}
@@ -431,11 +431,11 @@ export default function DashboardPage() {
         {/* Dashboard Main View Container */}
         <main 
           style={{
-            paddingLeft: 'max(env(safe-area-inset-left, 0px), 16px)',
-            paddingRight: 'max(env(safe-area-inset-right, 0px), 16px)',
+            paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+            paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
             paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 32px)',
           }}
-          className="p-4 md:p-8 space-y-6 max-w-7xl w-full mx-auto"
+          className="p-3 sm:p-4 md:p-8 space-y-6 max-w-7xl w-full mx-auto overflow-x-hidden"
         >
           {activeTab === 'print' ? (
             <PrintView items={items} />
@@ -448,7 +448,7 @@ export default function DashboardPage() {
           ) : (
             <>
               {/* Header Dashboard Banner */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900 border border-slate-800 relative overflow-hidden shadow-2xl">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 sm:p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900 border border-slate-800 relative overflow-hidden shadow-2xl w-full">
             <div className="space-y-1 relative z-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
                 <Sparkles className="w-3.5 h-3.5" /> Sunday Clóset Operational Hub
@@ -462,7 +462,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Metric Quick Stats */}
-            <div className="flex items-center gap-3 relative z-10">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 relative z-10 w-full sm:w-auto">
               <button
                 onClick={() => setFilterVisible('all')}
                 className={`px-4 py-2.5 rounded-2xl border text-xs font-medium transition-all ${

@@ -35,11 +35,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es" className="dark overflow-x-hidden max-w-full w-full">
       <head>
         <meta name="referrer" content="no-referrer" />
       </head>
-      <body className={`${inter.variable} ${playfair.variable} font-sans bg-slate-950 text-slate-100 antialiased min-h-screen`}>
+      <body className={`${inter.variable} ${playfair.variable} font-sans bg-slate-950 text-slate-100 antialiased min-h-screen overflow-x-hidden max-w-full w-full`}>
         {children}
       </body>
     </html>
