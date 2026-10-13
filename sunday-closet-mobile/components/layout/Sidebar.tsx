@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, Printer, X, Grid, Layers } from 'lucide-react';
+import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, Printer, X, Grid, Layers, Instagram } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos';
-  setActiveTab: (tab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos') => void;
+  activeTab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos' | 'ig-lists';
+  setActiveTab: (tab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos' | 'ig-lists') => void;
   onOpenAddModal: () => void;
   onOpenLotModal: () => void;
   onOpenScheduleModal: () => void;
@@ -194,6 +194,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <ImageIcon className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
             <span>Actualizar Banner Web</span>
+          </button>
+
+          {/* Listas IG Navigation Button */}
+          <button
+            id="btn-nav-ig-lists"
+            onClick={() => setActiveTab('ig-lists')}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              activeTab === 'ig-lists'
+                ? 'bg-gradient-to-r from-pink-500/20 via-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-500/40 shadow-xs font-semibold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Instagram className="w-4 h-4 text-pink-400" />
+              <span>Listas ig</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 font-mono">
+              Carrusel
+            </span>
           </button>
         </nav>
       </div>

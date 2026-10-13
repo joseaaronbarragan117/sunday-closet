@@ -11,6 +11,7 @@ import { PosModal } from '@/components/modals/PosModal';
 import { PrintView } from '@/components/print/PrintView';
 import { GalleryFeedView } from '@/components/gallery/GalleryFeedView';
 import { AddLotModal } from '@/components/modals/AddLotModal';
+import { InstagramListView } from '@/components/instagram/InstagramListView';
 import { InventoryItem, NewItemFormData, ScheduleDropPayload, AddLotFormData } from '@/types/inventory';
 import { Tag, Eye, EyeOff, Sparkles, Filter, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
@@ -54,7 +55,7 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
 export default function DashboardPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos' | 'ig-lists'>('inventory');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLotModalOpen, setIsLotModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -445,6 +446,8 @@ export default function DashboardPage() {
               onToggleVisibility={handleToggleVisibility}
               isUpdatingSku={updatingSku}
             />
+          ) : activeTab === 'ig-lists' ? (
+            <InstagramListView items={items} />
           ) : (
             <>
               {/* Header Dashboard Banner */}
