@@ -54,10 +54,19 @@ export async function POST(request: Request) {
             },
           });
 
-          // 2. Update Nombre del Drop (T) and Fecha Programada Drop (U) (Columns 20-21)
+          // 2. Check headers to find Drop columns (P:Q in clean format, T:U in legacy)
+          const headerRes = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "'Inventario Central'!A1:Z1",
+          });
+          const headers = (headerRes.data.values?.[0] || []).map((h: string) => (h || '').toLowerCase().trim());
+          const dropRange = headers.some((h: string) => h.includes('sunday'))
+            ? `'Inventario Central'!T${sheetRowNumber}:U${sheetRowNumber}`
+            : `'Inventario Central'!P${sheetRowNumber}:Q${sheetRowNumber}`;
+
           await sheets.spreadsheets.values.update({
             spreadsheetId,
-            range: `'Inventario Central'!T${sheetRowNumber}:U${sheetRowNumber}`,
+            range: dropRange,
             valueInputOption: 'USER_ENTERED',
             requestBody: {
               values: [[dropName, scheduledAt]],

@@ -56,8 +56,24 @@ export async function GET(
 
     const cost = parseFloat(matchedRow[9]) || 0;
     const autoPrices = calculatePrices(cost);
-    const visibleVal = (matchedRow[21] || '').toString().trim().toUpperCase();
-    const isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+
+    const isLegacy = matchedRow.length > 21 && (matchedRow[14] !== undefined && matchedRow[14] !== '');
+    let pricePublished = 0;
+    let isVisible = false;
+    let scheduledDropDate: string | undefined = undefined;
+
+    if (isLegacy) {
+      pricePublished = parseFloat(matchedRow[14]) || parseFloat(matchedRow[11]) || autoPrices.priceWeb;
+      const visibleVal = (matchedRow[21] || '').toString().trim().toUpperCase();
+      isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+      scheduledDropDate = matchedRow[20] || undefined;
+    } else {
+      pricePublished = parseFloat(matchedRow[10]) || autoPrices.priceWeb;
+      const visibleVal = (matchedRow[17] || '').toString().trim().toUpperCase();
+      isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+      scheduledDropDate = matchedRow[16] || undefined;
+    }
+
     const status = matchedRow[8] || 'Disponible';
 
     if (!isVisible || status !== 'Disponible') {
@@ -74,11 +90,12 @@ export async function GET(
       size: matchedRow[3] || 'Única',
       color: matchedRow[4] || '',
       brand: matchedRow[5] || '',
-      priceWeb: parseFloat(matchedRow[11]) || autoPrices.priceWeb,
-      priceSunday: parseFloat(matchedRow[10]) || autoPrices.priceSunday,
+      priceWeb: pricePublished || autoPrices.priceWeb,
+      priceSunday: autoPrices.priceSunday,
+      pricePublished: pricePublished || autoPrices.priceWeb,
       visibleInWeb: isVisible,
       status,
-      scheduledDropDate: matchedRow[20] || undefined,
+      scheduledDropDate,
     };
 
     return NextResponse.json({ success: true, product }, { status: 200, headers: corsHeaders });

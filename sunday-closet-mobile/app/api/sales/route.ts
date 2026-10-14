@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getGoogleSheetsClient, getSpreadsheetId } from "@/lib/googleSheets";
 
 export interface SaleItemPayload {
@@ -13,6 +13,16 @@ export interface ProcessSalePayload {
   items: SaleItemPayload[];
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
   try {
     const spreadsheetId = getSpreadsheetId();
@@ -24,7 +34,7 @@ export async function POST(request: Request) {
     if (!items || items.length === 0) {
       return NextResponse.json(
         { success: false, error: "No se proporcionaron prendas para registrar la venta" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -62,20 +72,35 @@ export async function POST(request: Request) {
             requestBody: { values: [["Vendido"]] },
           });
 
-          // Col Q: Fecha de Venta, Col R: Precio Final de Venta, Col S: Canal de Venta
+          // Read header row to dynamically determine sale and visibility column positions
+          const headerRes = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "'Inventario Central'!A1:Z1",
+          });
+          const headers = (headerRes.data.values?.[0] || []).map((h: string) => (h || '').toLowerCase().trim());
+          const isLegacy = headers.some((h: string) => h.includes('sunday'));
+
+          const saleRange = isLegacy
+            ? `'Inventario Central'!Q${sheetRow}:S${sheetRow}`
+            : `'Inventario Central'!M${sheetRow}:O${sheetRow}`;
+          const visibleRange = isLegacy
+            ? `'Inventario Central'!V${sheetRow}`
+            : `'Inventario Central'!R${sheetRow}`;
+
+          // Fecha de Venta, Precio Final de Venta (se mantiene al vender), Canal de Venta
           await sheets.spreadsheets.values.update({
             spreadsheetId,
-            range: `'Inventario Central'!Q${sheetRow}:S${sheetRow}`,
+            range: saleRange,
             valueInputOption: "USER_ENTERED",
             requestBody: {
               values: [[today, item.finalPrice, `${channel}${customerNotes ? " (" + customerNotes + ")" : ""}`]],
             },
           });
 
-          // Col V: Visible en Web -> 'FALSO'
+          // Visible en Web -> 'FALSO'
           await sheets.spreadsheets.values.update({
             spreadsheetId,
-            range: `'Inventario Central'!V${sheetRow}`,
+            range: visibleRange,
             valueInputOption: "USER_ENTERED",
             requestBody: { values: [["FALSO"]] },
           });
@@ -90,12 +115,12 @@ export async function POST(request: Request) {
       channel,
       paymentMethod,
       date: today,
-    });
+    }, { headers: corsHeaders });
   } catch (error: any) {
     console.error("[API Sales POST] Error:", error);
     return NextResponse.json(
       { success: false, error: error?.message || "Error al procesar la venta" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

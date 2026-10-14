@@ -68,7 +68,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                 <th className="py-4 px-6">Foto</th>
                 <th className="py-4 px-6">Tipo + Marca</th>
                 <th className="py-4 px-6">Detalles (Talla/Color)</th>
-                <th className="py-4 px-6 text-right">Precio Web</th>
+                <th className="py-4 px-6 text-right">Precio</th>
                 <th className="py-4 px-6 text-center">Estado</th>
                 <th className="py-4 px-6 text-center">Visible en Web</th>
               </tr>
@@ -124,11 +124,11 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Precio Web */}
+                    {/* Precio */}
                     <td className="py-4 px-6 text-right font-semibold text-emerald-400">
                       <span className="inline-flex items-center">
                         <DollarSign className="w-3.5 h-3.5 -mr-0.5 text-emerald-500" />
-                        {formatPrice(item.priceWeb)}
+                        {formatPrice(item.pricePublished || item.priceWeb)}
                       </span>
                     </td>
 

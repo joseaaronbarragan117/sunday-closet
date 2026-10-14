@@ -94,8 +94,37 @@ export async function GET() {
             const cost = parseMoney(row[9], 0);
             const autoPrices = calculatePrices(cost);
 
-            const visibleVal = (row[21] || '').toString().trim().toUpperCase();
-            const isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+            // Determine if row is in legacy 22+ col format or new clean format without suggested prices in Sheets
+            const isLegacy = row.length > 21 && (row[14] !== undefined && row[14] !== '');
+
+            let pricePublished = 0;
+            let isVisible = false;
+            let dropName: string | undefined = undefined;
+            let scheduledDropDate: string | undefined = undefined;
+            let lotName: string | undefined = undefined;
+            let lotDate: string | undefined = undefined;
+            let lotTotalCost: number | undefined = undefined;
+
+            if (isLegacy) {
+              pricePublished = parseMoney(row[14], parseMoney(row[11], autoPrices.priceWeb));
+              const visibleVal = (row[21] || '').toString().trim().toUpperCase();
+              isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+              dropName = row[19] ? row[19].trim() : undefined;
+              scheduledDropDate = row[20] ? row[20].trim() : undefined;
+              lotName = row[22] ? row[22].trim() : undefined;
+              lotDate = row[23] ? row[23].trim() : undefined;
+              lotTotalCost = row[24] !== undefined && row[24] !== '' ? parseMoney(row[24]) : undefined;
+            } else {
+              // Clean format: Col K (10) is the selling price
+              pricePublished = parseMoney(row[10], autoPrices.priceWeb);
+              const visibleVal = (row[17] || '').toString().trim().toUpperCase();
+              isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+              dropName = row[15] ? row[15].trim() : undefined;
+              scheduledDropDate = row[16] ? row[16].trim() : undefined;
+              lotName = row[18] ? row[18].trim() : undefined;
+              lotDate = row[19] ? row[19].trim() : undefined;
+              lotTotalCost = row[20] !== undefined && row[20] !== '' ? parseMoney(row[20]) : undefined;
+            }
 
             return {
               sku: (row[0] || '').trim(),
@@ -108,17 +137,18 @@ export async function GET() {
               condition: ((row[7] || 'Nuevo c/etiqueta').trim()) as ItemCondition,
               status: ((row[8] || 'Disponible').trim()) as InventoryItem['status'],
               cost: cost,
-              priceSunday: parseMoney(row[10], autoPrices.priceSunday),
-              priceWeb: parseMoney(row[11], autoPrices.priceWeb),
-              priceFB: parseMoney(row[12], autoPrices.priceFB),
-              pricePaca: parseMoney(row[13], autoPrices.pricePaca),
-              pricePublished: parseMoney(row[14], parseMoney(row[11], autoPrices.priceWeb)),
+              // Precios sugeridos calculados en el código del dashboard (sin recurrir a Sheets):
+              priceSunday: autoPrices.priceSunday,
+              priceWeb: autoPrices.priceWeb,
+              priceFB: autoPrices.priceFB,
+              pricePaca: autoPrices.pricePaca,
+              pricePublished: pricePublished || autoPrices.priceWeb,
               visibleInWeb: isVisible,
-              scheduledDropDate: row[20] ? row[20].trim() : undefined,
-              dropName: row[19] ? row[19].trim() : undefined,
-              lotName: row[22] ? row[22].trim() : undefined,
-              lotDate: row[23] ? row[23].trim() : undefined,
-              lotTotalCost: row[24] !== undefined && row[24] !== '' ? parseMoney(row[24]) : undefined,
+              scheduledDropDate,
+              dropName,
+              lotName,
+              lotDate,
+              lotTotalCost,
             };
           });
 
@@ -220,40 +250,71 @@ export async function POST(request: Request) {
 
     if (spreadsheetId && clientEmail) {
       const sheets = getGoogleSheetsClient();
+      const headerRes = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "'Inventario Central'!A1:Z1",
+      });
+      const headers = headerRes.data.values?.[0] || [];
+      const hasSundayHeader = headers.some((h: string) => (h || '').toLowerCase().includes('sunday'));
+
+      const rowToAppend = hasSundayHeader
+        ? [
+            newItem.sku,                  // Col A (0): SKU / Código
+            newItem.photoUrl,             // Col B (1): Foto (URL)
+            newItem.type,                 // Col C (2): Tipo de Prenda
+            newItem.size,                 // Col D (3): Talla
+            newItem.color,                // Col E (4): Color Principal
+            newItem.brand,                // Col F (5): Marca
+            newItem.style,                // Col G (6): Estilo
+            newItem.condition,            // Col H (7): Condición
+            newItem.status,               // Col I (8): Estado / Proceso
+            newItem.cost,                 // Col J (9): Precio de Compra
+            '',                           // Col K (10): (Sin precio sugerido en sheets)
+            '',                           // Col L (11): (Sin precio sugerido en sheets)
+            '',                           // Col M (12): (Sin precio sugerido en sheets)
+            '',                           // Col N (13): (Sin precio sugerido en sheets)
+            newItem.pricePublished,       // Col O (14): Precio asignado
+            new Date().toISOString().split('T')[0], // Col P (15): Fecha de Compra
+            '',                           // Col Q (16): Fecha de Venta
+            '',                           // Col R (17): Precio Final de Venta
+            '',                           // Col S (18): Canal de Venta
+            '',                           // Col T (19): Nombre del Drop
+            '',                           // Col U (20): Fecha Programada Drop
+            'FALSO',                      // Col V (21): Visible en Web
+            newItem.lotName || '',        // Col W (22): Nombre del Lote
+            newItem.lotDate || '',        // Col X (23): Fecha del Lote
+            newItem.lotTotalCost !== undefined ? newItem.lotTotalCost : '', // Col Y (24): Costo Total del Lote
+          ]
+        : [
+            newItem.sku,                  // Col A (0): SKU / Código
+            newItem.photoUrl,             // Col B (1): Foto (URL)
+            newItem.type,                 // Col C (2): Tipo de Prenda
+            newItem.size,                 // Col D (3): Talla
+            newItem.color,                // Col E (4): Color Principal
+            newItem.brand,                // Col F (5): Marca
+            newItem.style,                // Col G (6): Estilo
+            newItem.condition,            // Col H (7): Condición
+            newItem.status,               // Col I (8): Estado / Proceso
+            newItem.cost,                 // Col J (9): Precio de Compra
+            newItem.pricePublished,       // Col K (10): Precio de Venta (solo el precio asignado, sin sugeridos en sheets!)
+            new Date().toISOString().split('T')[0], // Col L (11): Fecha de Compra
+            '',                           // Col M (12): Fecha de Venta
+            '',                           // Col N (13): Precio Final de Venta
+            '',                           // Col O (14): Canal de Venta
+            '',                           // Col P (15): Nombre del Drop
+            '',                           // Col Q (16): Fecha Programada Drop
+            'FALSO',                      // Col R (17): Visible en Web
+            newItem.lotName || '',        // Col S (18): Nombre del Lote
+            newItem.lotDate || '',        // Col T (19): Fecha del Lote
+            newItem.lotTotalCost !== undefined ? newItem.lotTotalCost : '', // Col U (20): Costo Total del Lote
+          ];
+
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: "'Inventario Central'!A:Y",
+        range: "'Inventario Central'!A:U",
         valueInputOption: 'USER_ENTERED',
         requestBody: {
-          values: [
-            [
-              newItem.sku,                  // Col A (0): SKU / Código
-              newItem.photoUrl,             // Col B (1): Foto (URL)
-              newItem.type,                 // Col C (2): Tipo de Prenda
-              newItem.size,                 // Col D (3): Talla
-              newItem.color,                // Col E (4): Color Principal
-              newItem.brand,                // Col F (5): Marca
-              newItem.style,                // Col G (6): Estilo
-              newItem.condition,            // Col H (7): Condición
-              newItem.status,               // Col I (8): Estado / Proceso
-              newItem.cost,                 // Col J (9): Precio de Compra
-              newItem.priceSunday,          // Col K (10): Precio Sunday (Insta)
-              newItem.priceWeb,             // Col L (11): Precio Web
-              newItem.priceFB,              // Col M (12): Precio Facebook
-              newItem.pricePaca,            // Col N (13): Precio Paca / Remate
-              newItem.pricePublished,       // Col O (14): precio publicado
-              new Date().toISOString().split('T')[0], // Col P (15): Fecha de Compra
-              '',                           // Col Q (16): Fecha de Venta
-              '',                           // Col R (17): Precio Final de Venta
-              '',                           // Col S (18): Canal de Venta
-              '',                           // Col T (19): Nombre del Drop
-              '',                           // Col U (20): Fecha Programada Drop
-              'FALSO',                      // Col V (21): Visible en Web
-              newItem.lotName || '',        // Col W (22): Nombre del Lote
-              newItem.lotDate || '',        // Col X (23): Fecha del Lote
-              newItem.lotTotalCost !== undefined ? newItem.lotTotalCost : '', // Col Y (24): Costo Total del Lote
-            ],
-          ],
+          values: [rowToAppend],
         },
       });
     }

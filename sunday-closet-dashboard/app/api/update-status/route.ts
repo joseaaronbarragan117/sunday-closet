@@ -45,10 +45,17 @@ export async function PATCH(request: Request) {
         const sheetRowNumber = rowIndex + 2;
         const cellValue = visibleInWeb ? 'VERDADERO' : 'FALSO';
 
-        // Column V is 'Visible en Web'
+        // Check headers to find Visible en Web column (R in clean format, V in legacy)
+        const headerRes = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: "'Inventario Central'!A1:Z1",
+        });
+        const headers = (headerRes.data.values?.[0] || []).map((h: string) => (h || '').toLowerCase().trim());
+        const visibleCol = headers.some((h: string) => h.includes('sunday')) ? 'V' : 'R';
+
         await sheets.spreadsheets.values.update({
           spreadsheetId,
-          range: `'Inventario Central'!V${sheetRowNumber}`,
+          range: `'Inventario Central'!${visibleCol}${sheetRowNumber}`,
           valueInputOption: 'USER_ENTERED',
           requestBody: {
             values: [[cellValue]],

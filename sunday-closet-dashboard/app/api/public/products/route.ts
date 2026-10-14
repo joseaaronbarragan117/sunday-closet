@@ -51,10 +51,26 @@ export async function GET(request: Request) {
       .map((row: string[]) => {
         const cost = parseFloat(row[9]) || 0;
         const autoPrices = calculatePrices(cost);
-        const visibleVal = (row[21] || '').toString().trim().toUpperCase();
-        const isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+
+        // Detect if row is in legacy format or clean format
+        const isLegacy = row.length > 21 && (row[14] !== undefined && row[14] !== '');
+        let pricePublished = 0;
+        let isVisible = false;
+        let scheduledDropDate: string | undefined = undefined;
+
+        if (isLegacy) {
+          pricePublished = parseFloat(row[14]) || parseFloat(row[11]) || autoPrices.priceWeb;
+          const visibleVal = (row[21] || '').toString().trim().toUpperCase();
+          isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+          scheduledDropDate = row[20] || undefined;
+        } else {
+          pricePublished = parseFloat(row[10]) || autoPrices.priceWeb;
+          const visibleVal = (row[17] || '').toString().trim().toUpperCase();
+          isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
+          scheduledDropDate = row[16] || undefined;
+        }
+
         const status = (row[8] || 'Disponible') as InventoryItem['status'];
-        const pricePublished = parseFloat(row[14]) || parseFloat(row[11]) || autoPrices.priceWeb;
 
         return {
           sku: row[0] || '',
@@ -66,11 +82,11 @@ export async function GET(request: Request) {
           style: row[6] || 'Vintage',
           condition: row[7] || 'Nuevo c/etiqueta',
           status,
-          priceWeb: parseFloat(row[11]) || autoPrices.priceWeb,
-          priceSunday: parseFloat(row[10]) || autoPrices.priceSunday,
-          pricePublished,
+          priceWeb: pricePublished || autoPrices.priceWeb,
+          priceSunday: autoPrices.priceSunday,
+          pricePublished: pricePublished || autoPrices.priceWeb,
           visibleInWeb: isVisible,
-          scheduledDropDate: row[20] || undefined,
+          scheduledDropDate,
         };
       })
       .filter((product) => {
