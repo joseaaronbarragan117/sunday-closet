@@ -51,10 +51,12 @@ export const FilterBottomSheet: React.FC<FilterBottomSheetProps> = ({
   const colorOptions = ["Todos", "Negro", "Blanco", "Beige", "Azul", "Rojo", "Verde", "Gris", "Floral"];
   const categoryOptions = [
     { id: null, label: "Todos los productos" },
-    { id: "vestidos", label: "Vestidos" },
+    { id: "vestido", label: "Vestidos" },
     { id: "superior", label: "Tops & Blusas" },
-    { id: "inferior", label: "Pantalones & Faldas" },
+    { id: "inferior", label: "Prendas Inferiores" },
+    { id: "abrigo", label: "Abrigos & Blazers" },
     { id: "accesorio", label: "Bolsos & Accesorios" },
+    { id: "otros", label: "Otros" },
   ];
   const styleOptions = ["Todos", "Vintage 90s", "Minimal", "Streetwear", "Y2K", "Boho", "Casual"];
 

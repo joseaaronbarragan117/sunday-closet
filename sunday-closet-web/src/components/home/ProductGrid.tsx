@@ -39,14 +39,12 @@ const COLORS = [
 
 const GARMENT_TYPES = [
   { id: "todos", label: "Todos" },
-  { id: "top", label: "Top / Crop" },
-  { id: "blusa", label: "Blusa" },
-  { id: "camisa", label: "Camisa" },
-  { id: "corset", label: "Corset" },
-  { id: "blazer", label: "Blazer" },
-  { id: "falda", label: "Falda" },
-  { id: "pantalon", label: "Pantalón / Jeans" },
+  { id: "vestido", label: "Vestidos" },
+  { id: "superior", label: "Tops & Blusas" },
+  { id: "inferior", label: "Prendas Inferiores" },
+  { id: "abrigo", label: "Abrigos & Blazers" },
   { id: "accesorio", label: "Accesorios" },
+  { id: "otros", label: "Otros" },
 ];
 
 export default function ProductGrid({ products }: ProductGridProps) {
@@ -99,32 +97,15 @@ export default function ProductGrid({ products }: ProductGridProps) {
           if (!searchTarget.includes("blanco") && !searchTarget.includes("crema")) return false;
         } else if (selectedColor === "floral") {
           if (!searchTarget.includes("floral") && !searchTarget.includes("flores") && !searchTarget.includes("cuadros")) return false;
-        } else if (selectedColor === "pantalon") {
-          if (!searchTarget.includes("pantalon") && !searchTarget.includes("pantalón") && !searchTarget.includes("cargo") && !searchTarget.includes("jeans") && !searchTarget.includes("palazzo")) return false;
         } else {
           if (!searchTarget.includes(selectedColor)) return false;
         }
       }
 
-      // 4. Filtro Tipo de prenda
+      // 4. Filtro Categoría / Tipo de prenda
       if (selectedType !== "todos") {
-        const pType = (product.tipo || "").toLowerCase();
-        const pCat = (product.categoriaRopa || "").toLowerCase();
-        const pName = (product.nombre || "").toLowerCase();
-
-        if (selectedType === "pantalon") {
-          const isLower =
-            pCat === "inferior" ||
-            pType.includes("pant") ||
-            pType.includes("jeans") ||
-            pType.includes("cargo") ||
-            pType.includes("palazzo");
-          if (!isLower) return false;
-        } else if (selectedType === "accesorio") {
-          if (pCat !== "accesorio" && !pType.includes("bolso") && !pType.includes("gorra") && !pType.includes("cintur")) return false;
-        } else {
-          if (!pType.includes(selectedType) && !pName.includes(selectedType)) return false;
-        }
+        const pCat = (product.categoriaRopa || "otros").toLowerCase();
+        if (pCat !== selectedType) return false;
       }
 
       return true;

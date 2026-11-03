@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { InventoryItem } from '@/types/inventory';
 import { DriveImage } from '@/components/common/DriveImage';
+import { classifyGarmentCategory, ClothingCategory } from '@/lib/categoryClassifier';
 import {
   Search,
   Eye,
@@ -30,6 +31,7 @@ export const GalleryFeedView: React.FC<GalleryFeedViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'Disponible' | 'Reservado' | 'Vendido' | 'Programado'>('all');
   const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'visible' | 'hidden'>('all');
   const [styleFilter, setStyleFilter] = useState<'all' | 'Vintage' | 'Cute' | 'Casual'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | ClothingCategory>('all');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [copiedSku, setCopiedSku] = useState(false);
 
@@ -51,10 +53,14 @@ export const GalleryFeedView: React.FC<GalleryFeedViewProps> = ({
       if (visibilityFilter === 'visible' && !item.visibleInWeb) return false;
       if (visibilityFilter === 'hidden' && item.visibleInWeb) return false;
       if (styleFilter !== 'all' && item.style !== styleFilter) return false;
+      if (categoryFilter !== 'all') {
+        const itemCategory = item.category || classifyGarmentCategory(item.type);
+        if (itemCategory !== categoryFilter) return false;
+      }
 
       return true;
     });
-  }, [items, searchQuery, statusFilter, visibilityFilter, styleFilter]);
+  }, [items, searchQuery, statusFilter, visibilityFilter, styleFilter, categoryFilter]);
 
   const handleCopySku = (sku: string) => {
     navigator.clipboard.writeText(sku);
@@ -160,12 +166,13 @@ export const GalleryFeedView: React.FC<GalleryFeedViewProps> = ({
           </div>
 
           {/* Reset Filters button if any active */}
-          {(statusFilter !== 'all' || visibilityFilter !== 'all' || searchQuery !== '') && (
+          {(statusFilter !== 'all' || visibilityFilter !== 'all' || categoryFilter !== 'all' || searchQuery !== '') && (
             <button
               onClick={() => {
                 setStatusFilter('all');
                 setVisibilityFilter('all');
                 setStyleFilter('all');
+                setCategoryFilter('all');
                 setSearchQuery('');
               }}
               className="ml-auto text-[11px] text-rose-400 hover:text-rose-300 underline font-medium px-1"
@@ -173,6 +180,32 @@ export const GalleryFeedView: React.FC<GalleryFeedViewProps> = ({
               Restablecer filtros
             </button>
           )}
+        </div>
+
+        {/* Category Filter Row */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none pt-1 border-t border-slate-800/60 text-xs">
+          <span className="text-[11px] text-slate-500 font-medium px-1 shrink-0">Categoría:</span>
+          {([
+            { id: 'all', label: 'Todas' },
+            { id: 'superior', label: 'Tops & Blusas' },
+            { id: 'inferior', label: 'Prendas Inferiores' },
+            { id: 'vestido', label: 'Vestidos' },
+            { id: 'abrigo', label: 'Abrigos & Blazers' },
+            { id: 'accesorio', label: 'Accesorios' },
+            { id: 'otros', label: 'Otros' },
+          ] as const).map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`px-2.5 py-1 rounded-xl text-xs font-medium shrink-0 transition-all ${
+                categoryFilter === cat.id
+                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold'
+                  : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:text-slate-200'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
         </div>
       </div>
 

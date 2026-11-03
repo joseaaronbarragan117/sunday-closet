@@ -1,7 +1,7 @@
 // src/lib/data/mockProducts.ts
 
 export type ProductStatus = "disponible" | "vendido" | "en_carrito";
-export type ClothingCategory = "superior" | "inferior" | "accesorio";
+export type ClothingCategory = "superior" | "inferior" | "vestido" | "abrigo" | "accesorio" | "otros";
 
 export interface Product {
   id: string;

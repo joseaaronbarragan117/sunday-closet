@@ -11,10 +11,12 @@ export interface CategoryTabItem {
 export const HM_TABS: CategoryTabItem[] = [
   { id: "all", label: "VER TODO" },
   { id: "bestsellers", label: "LOS MÁS VENDIDOS" },
-  { id: "vestidos", label: "VESTIDOS" },
+  { id: "vestido", label: "VESTIDOS" },
   { id: "superior", label: "TOPS" },
-  { id: "inferior", label: "PANTALONES" },
+  { id: "inferior", label: "PRENDAS INFERIORES" },
+  { id: "abrigo", label: "ABRIGOS" },
   { id: "accesorio", label: "ACCESORIOS" },
+  { id: "otros", label: "OTROS" },
 ];
 
 interface HMSubNavProps {

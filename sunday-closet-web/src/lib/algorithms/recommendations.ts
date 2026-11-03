@@ -31,9 +31,12 @@ export function getCombinaTuPrenda(
   all: Product[]
 ): Product[] {
   const opposites: Record<Product["categoriaRopa"], Product["categoriaRopa"][]> = {
-    superior: ["inferior"],
-    inferior: ["superior"],
-    accesorio: ["superior", "inferior"],
+    superior: ["inferior", "abrigo", "accesorio"],
+    inferior: ["superior", "abrigo", "accesorio"],
+    vestido: ["abrigo", "accesorio"],
+    abrigo: ["superior", "inferior", "vestido"],
+    accesorio: ["superior", "inferior", "vestido"],
+    otros: ["superior", "inferior", "accesorio"],
   };
 
   const targetCategories = opposites[current.categoriaRopa];

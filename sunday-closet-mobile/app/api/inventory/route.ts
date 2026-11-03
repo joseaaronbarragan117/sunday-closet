@@ -3,6 +3,7 @@ import { getGoogleSheetsClient, getSpreadsheetId, getInventorySheetId } from '@/
 import { InventoryItem, ItemStyle, ItemCondition } from '@/types/inventory';
 import { calculatePrices } from '@/lib/priceCalculator';
 import { formatDriveImageUrl } from '@/lib/imageUrl';
+import { classifyGarmentCategory } from '@/lib/categoryClassifier';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -99,6 +100,7 @@ export async function GET() {
 
             let pricePublished = 0;
             let isVisible = false;
+            let purchaseDate: string | undefined = undefined;
             let dropName: string | undefined = undefined;
             let scheduledDropDate: string | undefined = undefined;
             let lotName: string | undefined = undefined;
@@ -107,6 +109,7 @@ export async function GET() {
 
             if (isLegacy) {
               pricePublished = parseMoney(row[14], parseMoney(row[11], autoPrices.priceWeb));
+              purchaseDate = row[15] ? row[15].trim() : undefined;
               const visibleVal = (row[21] || '').toString().trim().toUpperCase();
               isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
               dropName = row[19] ? row[19].trim() : undefined;
@@ -115,8 +118,9 @@ export async function GET() {
               lotDate = row[23] ? row[23].trim() : undefined;
               lotTotalCost = row[24] !== undefined && row[24] !== '' ? parseMoney(row[24]) : undefined;
             } else {
-              // Clean format: Col K (10) is the selling price
+              // Clean format: Col K (10) is the selling price, Col L (11) is Fecha de Compra
               pricePublished = parseMoney(row[10], autoPrices.priceWeb);
+              purchaseDate = row[11] ? row[11].trim() : undefined;
               const visibleVal = (row[17] || '').toString().trim().toUpperCase();
               isVisible = visibleVal === 'VERDADERO' || visibleVal === 'TRUE' || visibleVal === '1';
               dropName = row[15] ? row[15].trim() : undefined;
@@ -126,10 +130,12 @@ export async function GET() {
               lotTotalCost = row[20] !== undefined && row[20] !== '' ? parseMoney(row[20]) : undefined;
             }
 
+            const itemType = (row[2] || '').trim();
+
             return {
               sku: (row[0] || '').trim(),
               photoUrl: formatDriveImageUrl(row[1]) || '',
-              type: (row[2] || '').trim(),
+              type: itemType,
               size: (row[3] || 'M').trim(),
               color: (row[4] || '').trim(),
               brand: (row[5] || '').trim(),
@@ -144,6 +150,8 @@ export async function GET() {
               pricePaca: autoPrices.pricePaca,
               pricePublished: pricePublished || autoPrices.priceWeb,
               visibleInWeb: isVisible,
+              purchaseDate,
+              category: classifyGarmentCategory(itemType),
               scheduledDropDate,
               dropName,
               lotName,

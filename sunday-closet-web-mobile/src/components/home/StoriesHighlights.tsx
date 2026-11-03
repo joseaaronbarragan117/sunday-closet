@@ -14,11 +14,11 @@ interface StoryItem {
 const STORIES: StoryItem[] = [
   { id: "drop", label: "Nuevo Drop", emoji: "✨", isNew: true },
   { id: "superior", label: "Tops & Blusas", emoji: "👚", categoryFilter: "superior" },
-  { id: "inferior", label: "Pantalones", emoji: "👖", categoryFilter: "inferior" },
-  { id: "vestidos", label: "Vestidos", emoji: "👗", categoryFilter: "superior" },
+  { id: "inferior", label: "Prendas Inferiores", emoji: "👖", categoryFilter: "inferior" },
+  { id: "vestido", label: "Vestidos", emoji: "👗", categoryFilter: "vestido" },
+  { id: "abrigo", label: "Abrigos", emoji: "🧥", categoryFilter: "abrigo" },
   { id: "accesorio", label: "Bolsos & Más", emoji: "👜", categoryFilter: "accesorio" },
-  { id: "vintage", label: "90s Vintage", emoji: "🏷️" },
-  { id: "circular", label: "Moda Circular", emoji: "🌿" },
+  { id: "otros", label: "Otros", emoji: "🏷️", categoryFilter: "otros" },
 ];
 
 interface StoriesHighlightsProps {

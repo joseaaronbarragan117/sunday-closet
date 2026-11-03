@@ -1,6 +1,7 @@
 // src/lib/data/getProducts.ts
 import { Product, mockProducts } from './mockProducts';
 import { formatDriveImageUrl } from '@/lib/imageUrl';
+import { classifyGarmentCategory } from './categoryClassifier';
 
 export const DASHBOARD_API_URL =
   process.env.NEXT_PUBLIC_INVENTORY_API_URL || 'https://sunday-closet-dashboard.vercel.app/api/public/products';
@@ -32,27 +33,7 @@ export function mapItemToProduct(item: any): Product {
   const rawSku = (item.sku || item.id || '').trim();
   const itemSlug = `${slugify(rawType)}-${slugify(rawBrand)}-${rawSku.toLowerCase()}`;
 
-  const typeLower = rawType.toLowerCase();
-  let categoriaRopa: Product['categoriaRopa'] = 'superior';
-  if (
-    typeLower.includes('falda') ||
-    typeLower.includes('pantalón') ||
-    typeLower.includes('pantalon') ||
-    typeLower.includes('cargo') ||
-    typeLower.includes('jeans') ||
-    typeLower.includes('short')
-  ) {
-    categoriaRopa = 'inferior';
-  } else if (
-    typeLower.includes('bolso') ||
-    typeLower.includes('gorra') ||
-    typeLower.includes('cinturón') ||
-    typeLower.includes('cinturon') ||
-    typeLower.includes('accesorio') ||
-    typeLower.includes('lentes')
-  ) {
-    categoriaRopa = 'accesorio';
-  }
+  const categoriaRopa: Product['categoriaRopa'] = classifyGarmentCategory(rawType);
 
   const statusLower = (item.status || '').toLowerCase().trim();
   const isAvailable =
@@ -187,7 +168,7 @@ export async function getLiveProductBySlug(slug: string): Promise<Product | unde
     talla: 'M',
     precio: 0,
     estado: 'disponible',
-    categoriaRopa: 'superior',
+    categoriaRopa: classifyGarmentCategory(detectedName),
     descripcion: `${detectedName}. Pieza única seleccionada para Sunday Clóset.`,
     imagenUrl: FALLBACK_IMAGE,
     drop: 'Drop Activo — Edición Limitada',

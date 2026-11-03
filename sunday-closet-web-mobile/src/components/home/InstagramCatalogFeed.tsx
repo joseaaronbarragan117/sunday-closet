@@ -92,16 +92,18 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
 
     // Category filter
     if (selectedCategory !== "all") {
-      if (selectedCategory === "vestidos") {
-        list = list.filter((p) => p.tipo.toLowerCase().includes("vestido") || p.nombre.toLowerCase().includes("vestido"));
-      } else if (selectedCategory === "tops") {
-        list = list.filter((p) => p.categoriaRopa === "superior" && !p.tipo.toLowerCase().includes("vestido"));
-      } else if (selectedCategory === "pantalones") {
+      if (selectedCategory === "vestidos" || selectedCategory === "vestido") {
+        list = list.filter((p) => p.categoriaRopa === "vestido");
+      } else if (selectedCategory === "tops" || selectedCategory === "superior") {
+        list = list.filter((p) => p.categoriaRopa === "superior");
+      } else if (selectedCategory === "inferior" || selectedCategory === "pantalones") {
         list = list.filter((p) => p.categoriaRopa === "inferior");
-      } else if (selectedCategory === "abrigos") {
-        list = list.filter((p) => p.tipo.toLowerCase().includes("blazer") || p.tipo.toLowerCase().includes("abrigo") || p.tipo.toLowerCase().includes("chamarra"));
-      } else if (selectedCategory === "accesorios") {
+      } else if (selectedCategory === "abrigos" || selectedCategory === "abrigo") {
+        list = list.filter((p) => p.categoriaRopa === "abrigo");
+      } else if (selectedCategory === "accesorios" || selectedCategory === "accesorio") {
         list = list.filter((p) => p.categoriaRopa === "accesorio");
+      } else if (selectedCategory === "otros") {
+        list = list.filter((p) => p.categoriaRopa === "otros");
       }
     }
 
@@ -301,11 +303,12 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
             <span className="text-[11px] text-slate-500 font-medium px-1 shrink-0">Categoría:</span>
             {[
               { id: "all", label: "Todas" },
-              { id: "vestidos", label: "Vestidos" },
-              { id: "tops", label: "Tops & Blusas" },
-              { id: "pantalones", label: "Pantalones & Faldas" },
-              { id: "abrigos", label: "Abrigos & Blazers" },
-              { id: "accesorios", label: "Accesorios" },
+              { id: "vestido", label: "Vestidos" },
+              { id: "superior", label: "Tops & Blusas" },
+              { id: "inferior", label: "Prendas Inferiores" },
+              { id: "abrigo", label: "Abrigos & Blazers" },
+              { id: "accesorio", label: "Accesorios" },
+              { id: "otros", label: "Otros" },
             ].map((cat) => (
               <button
                 key={cat.id}

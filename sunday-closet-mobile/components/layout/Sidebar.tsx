@@ -1,18 +1,48 @@
 'use client';
 
 import React from 'react';
-import { Package, PlusCircle, Calendar, Sparkles, Tag, ShieldCheck, Image as ImageIcon, Store, Printer, X, Grid, Layers } from 'lucide-react';
+import {
+  Package,
+  PlusCircle,
+  Calendar,
+  Sparkles,
+  Tag,
+  ShieldCheck,
+  Image as ImageIcon,
+  Store,
+  Printer,
+  X,
+  Grid,
+  Layers,
+  Bell,
+  FileJson,
+} from 'lucide-react';
 import { InstagramIcon } from '@/components/common/InstagramIcon';
 
+export type DashboardTab =
+  | 'inventory'
+  | 'gallery'
+  | 'print'
+  | 'add'
+  | 'lot'
+  | 'gem-batch'
+  | 'schedule'
+  | 'banner'
+  | 'pos'
+  | 'ig-lists'
+  | 'notifications';
+
 interface SidebarProps {
-  activeTab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos' | 'ig-lists';
-  setActiveTab: (tab: 'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos' | 'ig-lists') => void;
+  activeTab: DashboardTab;
+  setActiveTab: (tab: DashboardTab) => void;
   onOpenAddModal: () => void;
   onOpenLotModal: () => void;
+  onOpenGemBatchModal?: () => void;
   onOpenScheduleModal: () => void;
   onOpenBannerModal: () => void;
   onOpenPosModal: () => void;
   hiddenCount: number;
+  otrosCount?: number;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
@@ -22,10 +52,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab,
   onOpenAddModal,
   onOpenLotModal,
+  onOpenGemBatchModal,
   onOpenScheduleModal,
   onOpenBannerModal,
   onOpenPosModal,
   hiddenCount,
+  otrosCount = 0,
   isOpenMobile = false,
   onCloseMobile,
 }) => {
@@ -44,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           paddingTop: 'max(env(safe-area-inset-top, 0px), 16px)',
           paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
         }}
-        className={`w-72 md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between p-4 h-screen fixed md:sticky top-0 z-50 md:z-30 select-none transition-transform duration-300 ease-in-out ${
+        className={`w-72 md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between p-4 h-screen fixed md:sticky top-0 z-50 md:z-30 select-none transition-transform duration-300 ease-in-out overflow-y-auto ${
           isOpenMobile ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none md:translate-x-0 md:pointer-events-auto'
         }`}
       >
@@ -76,159 +108,199 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-        {/* Navigation Menu */}
-        <nav className="space-y-2">
-          <button
-            id="btn-nav-inventory"
-            onClick={() => setActiveTab('inventory')}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              activeTab === 'inventory'
-                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-xs'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Package className="w-4 h-4" />
-              <span>Inventario Activo</span>
-            </div>
-            <Tag className="w-3.5 h-3.5 opacity-60" />
-          </button>
+          {/* Navigation Menu */}
+          <nav className="space-y-1.5">
+            <button
+              id="btn-nav-inventory"
+              onClick={() => setActiveTab('inventory')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === 'inventory'
+                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Package className="w-4 h-4" />
+                <span>Inventario Activo</span>
+              </div>
+              <Tag className="w-3.5 h-3.5 opacity-60" />
+            </button>
 
-          {/* Galería Feed (Instagram Style) Navigation Button */}
-          <button
-            id="btn-nav-gallery"
-            onClick={() => setActiveTab('gallery')}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              activeTab === 'gallery'
-                ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-xs font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Grid className="w-4 h-4 text-rose-400" />
-              <span>Galería Feed</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono">
-              Fotos
-            </span>
-          </button>
-
-          {/* Impresión de Etiquetas Navigation Button */}
-          <button
-            id="btn-nav-print"
-            onClick={() => setActiveTab('print')}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              activeTab === 'print'
-                ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-xs font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Printer className="w-4 h-4 text-purple-400" />
-              <span>Impresión Etiquetas</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">
-              CODE 128
-            </span>
-          </button>
-
-          {/* Venta Manual / POS Navigation Button */}
-          <button
-            id="btn-nav-pos"
-            onClick={onOpenPosModal}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-emerald-600/20 hover:border-emerald-500/30 border border-transparent transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <Store className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <span>Venta Manual / POS</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
-              Físico / IG
-            </span>
-          </button>
-
-          <button
-            id="btn-nav-add-item"
-            onClick={onOpenAddModal}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-rose-600/20 hover:border-rose-500/30 border border-transparent transition-all group"
-          >
-            <PlusCircle className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
-            <span>+ Agregar Prenda</span>
-          </button>
-
-          {/* + Agregar Lote directly below + Agregar Prenda */}
-          <button
-            id="btn-nav-add-lot"
-            onClick={onOpenLotModal}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-amber-600/20 hover:border-amber-500/30 border border-transparent transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <Layers className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-              <span>+ Agregar Lote</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
-              Paca
-            </span>
-          </button>
-
-          <button
-            id="btn-nav-schedule-drop"
-            onClick={onOpenScheduleModal}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-amber-600/20 hover:border-amber-500/30 border border-transparent transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <Calendar className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-              <span>+ Programar Drop</span>
-            </div>
-            {hiddenCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                {hiddenCount}
+            {/* Galería Feed (Instagram Style) Navigation Button */}
+            <button
+              id="btn-nav-gallery"
+              onClick={() => setActiveTab('gallery')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === 'gallery'
+                  ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-xs font-semibold'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Grid className="w-4 h-4 text-rose-400" />
+                <span>Galería Feed</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono">
+                Fotos
               </span>
-            )}
-          </button>
+            </button>
 
-          {/* New Banner Update Navigation Button */}
-          <button
-            id="btn-nav-banner"
-            onClick={onOpenBannerModal}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-indigo-600/20 hover:border-indigo-500/30 border border-transparent transition-all group"
-          >
-            <ImageIcon className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
-            <span>Actualizar Banner Web</span>
-          </button>
+            {/* Notificaciones (Detector de Categoría "Otros") */}
+            <button
+              id="btn-nav-notifications"
+              onClick={() => setActiveTab('notifications')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === 'notifications'
+                  ? 'bg-red-500/15 text-red-300 border border-red-500/35 shadow-xs font-semibold'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Bell className={`w-4 h-4 ${otrosCount > 0 ? 'text-red-400 animate-pulse' : 'text-slate-400'}`} />
+                <span>Notificaciones</span>
+              </div>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold transition-all ${
+                  otrosCount > 0
+                    ? 'bg-red-500 text-white shadow-sm shadow-red-500/40'
+                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                }`}
+              >
+                {otrosCount}
+              </span>
+            </button>
 
-          {/* Listas IG Navigation Button */}
-          <button
-            id="btn-nav-ig-lists"
-            onClick={() => setActiveTab('ig-lists')}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              activeTab === 'ig-lists'
-                ? 'bg-gradient-to-r from-pink-500/20 via-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-500/40 shadow-xs font-semibold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <InstagramIcon className="w-4 h-4 text-pink-400" />
-              <span>Listas ig</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 font-mono">
-              Carrusel
-            </span>
-          </button>
-        </nav>
-      </div>
+            {/* Impresión de Etiquetas Navigation Button */}
+            <button
+              id="btn-nav-print"
+              onClick={() => setActiveTab('print')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === 'print'
+                  ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-xs font-semibold'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Printer className="w-4 h-4 text-purple-400" />
+                <span>Impresión Etiquetas</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">
+                CODE 128
+              </span>
+            </button>
 
-      {/* Footer Info */}
-      <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs text-slate-400 space-y-1">
-        <div className="flex items-center justify-between text-slate-300 font-medium">
-          <span>Fuente de Datos:</span>
-          <span className="text-emerald-400 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Google Sheets
-          </span>
+            {/* Venta Manual / POS Navigation Button */}
+            <button
+              id="btn-nav-pos"
+              onClick={onOpenPosModal}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-emerald-600/20 hover:border-emerald-500/30 border border-transparent transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <Store className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span>Venta Manual / POS</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                Físico / IG
+              </span>
+            </button>
+
+            <button
+              id="btn-nav-add-item"
+              onClick={onOpenAddModal}
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-rose-600/20 hover:border-rose-500/30 border border-transparent transition-all group"
+            >
+              <PlusCircle className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
+              <span>+ Agregar Prenda</span>
+            </button>
+
+            {/* + Agregar Lote directly below + Agregar Prenda */}
+            <button
+              id="btn-nav-add-lot"
+              onClick={onOpenLotModal}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-amber-600/20 hover:border-amber-500/30 border border-transparent transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <Layers className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                <span>+ Agregar Lote</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
+                Paca
+              </span>
+            </button>
+
+            {/* Pegar lote desde Gem (JSON) */}
+            <button
+              id="btn-nav-gem-batch"
+              onClick={onOpenGemBatchModal}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:text-white bg-violet-600/15 hover:bg-violet-600/25 border border-violet-500/30 transition-all group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileJson className="w-4 h-4 text-violet-400 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="truncate text-xs sm:text-sm">Pegar lote desde Gem (JSON)</span>
+              </div>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/25 text-violet-300 font-mono shrink-0">
+                Voz
+              </span>
+            </button>
+
+            <button
+              id="btn-nav-schedule-drop"
+              onClick={onOpenScheduleModal}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-amber-600/20 hover:border-amber-500/30 border border-transparent transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                <span>+ Programar Drop</span>
+              </div>
+              {hiddenCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {hiddenCount}
+                </span>
+              )}
+            </button>
+
+            {/* New Banner Update Navigation Button */}
+            <button
+              id="btn-nav-banner"
+              onClick={onOpenBannerModal}
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800/40 hover:bg-indigo-600/20 hover:border-indigo-500/30 border border-transparent transition-all group"
+            >
+              <ImageIcon className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+              <span>Actualizar Banner Web</span>
+            </button>
+
+            {/* Listas IG Navigation Button */}
+            <button
+              id="btn-nav-ig-lists"
+              onClick={() => setActiveTab('ig-lists')}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === 'ig-lists'
+                  ? 'bg-gradient-to-r from-pink-500/20 via-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-500/40 shadow-xs font-semibold'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <InstagramIcon className="w-4 h-4 text-pink-400" />
+                <span>Listas ig</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 font-mono">
+                Carrusel
+              </span>
+            </button>
+          </nav>
         </div>
-        <p className="text-[11px] text-slate-500">Single Source of Truth active</p>
-      </div>
-    </aside>
+
+        {/* Footer Info */}
+        <div className="p-3 mt-4 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs text-slate-400 space-y-1">
+          <div className="flex items-center justify-between text-slate-300 font-medium">
+            <span>Fuente de Datos:</span>
+            <span className="text-emerald-400 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Google Sheets
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500">Single Source of Truth active</p>
+        </div>
+      </aside>
     </>
   );
 };

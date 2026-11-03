@@ -51,9 +51,12 @@ export default async function ProductPage({ params }: PageProps) {
   const combinaTuPrenda = getCombinaTuPrenda(product, catalog);
 
   const categoryLabel: Record<string, string> = {
-    superior: "Superior",
-    inferior: "Inferior",
-    accesorio: "Accesorio",
+    superior: "Tops & Blusas",
+    inferior: "Prendas Inferiores",
+    vestido: "Vestidos",
+    abrigo: "Abrigos & Blazers",
+    accesorio: "Accesorios",
+    otros: "Otros",
   };
 
   return (
@@ -100,7 +103,7 @@ export default async function ProductPage({ params }: PageProps) {
               </span>
               <span className="text-[#E5E3DD]">·</span>
               <span className="text-xs tracking-[0.2em] font-light text-[#8A8880] uppercase">
-                {categoryLabel[product.categoriaRopa] || "Superior"}
+                {categoryLabel[product.categoriaRopa] || "Otros"}
               </span>
             </div>
 

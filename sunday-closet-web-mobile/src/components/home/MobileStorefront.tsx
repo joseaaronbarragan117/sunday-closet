@@ -66,24 +66,18 @@ export const MobileStorefront: React.FC<MobileStorefrontProps> = ({
     }
 
     // Category from HMSubNav tab
-    if (selectedTab !== "all") {
-      if (selectedTab === "bestsellers") {
-        // Keep all
-      } else if (selectedTab === "vestidos") {
-        list = list.filter((p) => p.tipo.toLowerCase().includes("vestido") || p.nombre.toLowerCase().includes("vestido"));
-      } else if (selectedTab === "superior") {
-        list = list.filter((p) => p.categoriaRopa === "superior");
-      } else if (selectedTab === "inferior") {
-        list = list.filter((p) => p.categoriaRopa === "inferior");
-      } else if (selectedTab === "accesorio") {
-        list = list.filter((p) => p.categoriaRopa === "accesorio");
+    if (selectedTab !== "all" && selectedTab !== "bestsellers") {
+      if (selectedTab === "vestidos" || selectedTab === "vestido") {
+        list = list.filter((p) => p.categoriaRopa === "vestido");
+      } else {
+        list = list.filter((p) => p.categoriaRopa === selectedTab);
       }
     }
 
     // Category from Filter Drawer
     if (filters.category) {
-      if (filters.category === "vestidos") {
-        list = list.filter((p) => p.tipo.toLowerCase().includes("vestido") || p.nombre.toLowerCase().includes("vestido"));
+      if (filters.category === "vestidos" || filters.category === "vestido") {
+        list = list.filter((p) => p.categoriaRopa === "vestido");
       } else {
         list = list.filter((p) => p.categoriaRopa === filters.category);
       }

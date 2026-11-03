@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useTransition } from 'react';
-import { Sidebar } from '@/components/layout/Sidebar';
+import React, { useState, useEffect } from 'react';
+import { Sidebar, DashboardTab } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { AddItemModal } from '@/components/modals/AddItemModal';
@@ -11,9 +11,12 @@ import { PosModal } from '@/components/modals/PosModal';
 import { PrintView } from '@/components/print/PrintView';
 import { GalleryFeedView } from '@/components/gallery/GalleryFeedView';
 import { AddLotModal } from '@/components/modals/AddLotModal';
+import { GemBatchModal } from '@/components/modals/GemBatchModal';
 import { InstagramListView } from '@/components/instagram/InstagramListView';
-import { InventoryItem, NewItemFormData, ScheduleDropPayload, AddLotFormData } from '@/types/inventory';
-import { Tag, Eye, EyeOff, Sparkles, Filter, Trash2 } from 'lucide-react';
+import { NotificationsView } from '@/components/notifications/NotificationsView';
+import { InventoryItem, NewItemFormData, ScheduleDropPayload, AddLotFormData, GemBatchPayload } from '@/types/inventory';
+import { classifyGarmentCategory } from '@/lib/categoryClassifier';
+import { Tag, Eye, EyeOff, Sparkles, Filter, Trash2, FileJson, Bell } from 'lucide-react';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { getApiBase } from '@/lib/apiConfig';
 
@@ -22,32 +25,38 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
   const seen = new Set<string>();
   return rawItems
     .filter((item) => item && typeof item === 'object' && item.sku)
-    .map((item) => ({
-      sku: String(item.sku || '').trim(),
-      photoUrl: String(item.photoUrl || ''),
-      type: String(item.type || ''),
-      size: String(item.size || 'M'),
-      color: String(item.color || ''),
-      brand: String(item.brand || ''),
-      style: (item.style || 'Vintage'),
-      condition: (item.condition || 'Nuevo c/etiqueta'),
-      cost: Number(item.cost) || 0,
-      priceSunday: Number(item.priceSunday) || 0,
-      priceWeb: Number(item.priceWeb) || 0,
-      priceFB: Number(item.priceFB) || 0,
-      pricePaca: Number(item.pricePaca) || 0,
-      pricePublished: Number(item.pricePublished) || 0,
-      visibleInWeb: Boolean(item.visibleInWeb),
-      status: (item.status || 'Disponible'),
-      scheduledDropDate: item.scheduledDropDate ? String(item.scheduledDropDate) : undefined,
-      dropName: item.dropName ? String(item.dropName) : undefined,
-      lotName: item.lotName ? String(item.lotName) : undefined,
-      lotDate: item.lotDate ? String(item.lotDate) : undefined,
-      lotTotalCost: item.lotTotalCost ? Number(item.lotTotalCost) : undefined,
-    }))
+    .map((item) => {
+      const cleanType = String(item.type || '');
+      return {
+        sku: String(item.sku || '').trim(),
+        photoUrl: String(item.photoUrl || ''),
+        type: cleanType,
+        size: String(item.size || 'M'),
+        color: String(item.color || ''),
+        brand: String(item.brand || ''),
+        style: (item.style || 'Vintage'),
+        condition: (item.condition || 'Nuevo c/etiqueta'),
+        cost: Number(item.cost) || 0,
+        priceSunday: Number(item.priceSunday) || 0,
+        priceWeb: Number(item.priceWeb) || 0,
+        priceFB: Number(item.priceFB) || 0,
+        pricePaca: Number(item.pricePaca) || 0,
+        pricePublished: Number(item.pricePublished) || 0,
+        visibleInWeb: Boolean(item.visibleInWeb),
+        status: (item.status || 'Disponible'),
+        purchaseDate: item.purchaseDate ? String(item.purchaseDate) : undefined,
+        category: classifyGarmentCategory(cleanType),
+        scheduledDropDate: item.scheduledDropDate ? String(item.scheduledDropDate) : undefined,
+        dropName: item.dropName ? String(item.dropName) : undefined,
+        lotName: item.lotName ? String(item.lotName) : undefined,
+        lotDate: item.lotDate ? String(item.lotDate) : undefined,
+        lotTotalCost: item.lotTotalCost ? Number(item.lotTotalCost) : undefined,
+      };
+    })
     .filter((item) => {
-      if (!item.sku || seen.has(item.sku)) return false;
-      seen.add(item.sku);
+      const uniqueKey = `${item.sku}::${item.type}`;
+      if (!item.sku || seen.has(uniqueKey)) return false;
+      seen.add(uniqueKey);
       return true;
     });
 }
@@ -55,9 +64,10 @@ function sanitizeItems(rawItems: any[]): InventoryItem[] {
 export default function DashboardPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'inventory' | 'gallery' | 'print' | 'add' | 'lot' | 'schedule' | 'banner' | 'pos' | 'ig-lists'>('inventory');
+  const [activeTab, setActiveTab] = useState<DashboardTab>('inventory');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLotModalOpen, setIsLotModalOpen] = useState(false);
+  const [isGemModalOpen, setIsGemModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
@@ -66,6 +76,7 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdatingBanner, setIsUpdatingBanner] = useState(false);
   const [isSubmittingLot, setIsSubmittingLot] = useState(false);
+  const [isSubmittingGemBatch, setIsSubmittingGemBatch] = useState(false);
   const [updatingSku, setUpdatingSku] = useState<string | null>(null);
   const [deletingSku, setDeletingSku] = useState<string | null>(null);
   const [filterVisible, setFilterVisible] = useState<'all' | 'visible' | 'hidden'>('all');
@@ -300,6 +311,80 @@ export default function DashboardPage() {
     }
   };
 
+  // Handle Adding Gem Voice JSON Batch
+  const handleAddGemBatch = async (payload: GemBatchPayload) => {
+    try {
+      setIsSubmittingGemBatch(true);
+      const res = await fetch(`${getApiBase()}/api/inventory/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.items) {
+        const cleanNew = sanitizeItems([...data.items, ...items]);
+        setItems(cleanNew);
+        try {
+          localStorage.setItem('sunday_inventory_cache', JSON.stringify(cleanNew));
+        } catch {
+          // ignore
+        }
+        setIsGemModalOpen(false);
+        setActiveTab('inventory');
+        alert(`✨ ${data.message || 'Lote desde Gem agregado con éxito.'}`);
+      } else {
+        alert(data.error || 'Hubo un problema procesando el JSON del lote.');
+      }
+    } catch (err) {
+      console.error('Add gem batch error:', err);
+      alert('Error en la petición para guardar el lote desde Gem.');
+    } finally {
+      setIsSubmittingGemBatch(false);
+    }
+  };
+
+  // Handle Quick Update of Garment Type (Columna C) from NotificationsView
+  const handleUpdateItemType = async (sku: string, newType: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${getApiBase()}/api/update-status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sku, type: newType }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.error || 'Error al actualizar el Tipo de Prenda en Google Sheets');
+        return false;
+      }
+
+      setItems((prev) => {
+        const updated = prev.map((it) =>
+          it.sku === sku
+            ? {
+                ...it,
+                type: newType.trim(),
+                category: classifyGarmentCategory(newType.trim()),
+              }
+            : it
+        );
+        try {
+          localStorage.setItem('sunday_inventory_cache', JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
+        return updated;
+      });
+      return true;
+    } catch (err) {
+      console.error('Update item type error:', err);
+      alert('No se pudo actualizar el Tipo de Prenda en Google Sheets');
+      return false;
+    }
+  };
+
   // Handle Drop Scheduling
   const handleScheduleDrop = async (payload: ScheduleDropPayload) => {
     try {
@@ -376,6 +461,7 @@ export default function DashboardPage() {
 
   const hiddenCount = items.filter((item) => !item.visibleInWeb).length;
   const visibleCount = items.filter((item) => item.visibleInWeb).length;
+  const otrosCount = items.filter((item) => classifyGarmentCategory(item.type) === 'otros').length;
 
   return (
     <ErrorBoundary>
@@ -388,6 +474,7 @@ export default function DashboardPage() {
             setIsMobileSidebarOpen(false);
             if (tab === 'add') setIsAddModalOpen(true);
             if (tab === 'lot') setIsLotModalOpen(true);
+            if (tab === 'gem-batch') setIsGemModalOpen(true);
             if (tab === 'schedule') setIsScheduleModalOpen(true);
             if (tab === 'banner') setIsBannerModalOpen(true);
             if (tab === 'pos') setIsPosModalOpen(true);
@@ -399,6 +486,10 @@ export default function DashboardPage() {
           onOpenLotModal={() => {
             setIsMobileSidebarOpen(false);
             setIsLotModalOpen(true);
+          }}
+          onOpenGemBatchModal={() => {
+            setIsMobileSidebarOpen(false);
+            setIsGemModalOpen(true);
           }}
           onOpenScheduleModal={() => {
             setIsMobileSidebarOpen(false);
@@ -413,6 +504,7 @@ export default function DashboardPage() {
             setIsPosModalOpen(true);
           }}
           hiddenCount={hiddenCount}
+          otrosCount={otrosCount}
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
@@ -448,6 +540,11 @@ export default function DashboardPage() {
             />
           ) : activeTab === 'ig-lists' ? (
             <InstagramListView items={items} />
+          ) : activeTab === 'notifications' ? (
+            <NotificationsView
+              items={items}
+              onUpdateItemType={handleUpdateItemType}
+            />
           ) : (
             <>
               {/* Header Dashboard Banner */}
@@ -465,7 +562,25 @@ export default function DashboardPage() {
             </div>
 
             {/* Metric Quick Stats */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 relative z-10 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 relative z-10 w-full sm:w-auto">
+              <button
+                onClick={() => setIsGemModalOpen(true)}
+                className="px-4 py-2.5 rounded-2xl border border-violet-500/40 bg-violet-500/15 hover:bg-violet-500/25 text-violet-200 text-xs font-semibold transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+              >
+                <FileJson className="w-3.5 h-3.5 text-violet-400" />
+                <span>Pegar lote desde Gem (JSON)</span>
+              </button>
+
+              {otrosCount > 0 && (
+                <button
+                  onClick={() => setActiveTab('notifications')}
+                  className="px-4 py-2.5 rounded-2xl border border-red-500/40 bg-red-500/15 hover:bg-red-500/25 text-red-200 text-xs font-semibold transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <Bell className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+                  <span>Otros ({otrosCount})</span>
+                </button>
+              )}
+
               <button
                 onClick={() => setFilterVisible('all')}
                 className={`px-4 py-2.5 rounded-2xl border text-xs font-medium transition-all ${
@@ -599,6 +714,16 @@ export default function DashboardPage() {
         }}
         onSubmit={handleAddLot}
         isSubmitting={isSubmittingLot}
+      />
+
+      <GemBatchModal
+        isOpen={isGemModalOpen}
+        onClose={() => {
+          setIsGemModalOpen(false);
+          setActiveTab('inventory');
+        }}
+        onSubmit={handleAddGemBatch}
+        isSubmitting={isSubmittingGemBatch}
       />
 
       <DropSchedulerModal
