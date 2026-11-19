@@ -1,25 +1,22 @@
 // src/components/product/SingleProductCheckoutActions.tsx
 "use client";
 
-import React, { useState } from "react";
-import { MessageCircle, Check, ArrowRight, ShoppingBag } from "lucide-react";
-import { InstagramIcon } from "@/components/common/InstagramIcon";
+import React from "react";
+import { MessageCircle, Check, ShoppingBag } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { useCartStore } from "@/lib/store/cartStore";
 
-export const DEFAULT_INSTAGRAM_USERNAME = "sunday.closet1";
 export const DEFAULT_WHATSAPP_PHONE = "523411622960";
 
 export interface SingleProductCheckoutActionsProps {
   product: Product;
-  instagramUsername?: string;
   whatsappPhone?: string;
   onSuccess?: () => void;
   className?: string;
 }
 
 /**
- * Formats a single product order inquiry for Instagram & WhatsApp
+ * Formats a single product order inquiry for WhatsApp
  */
 export function formatSingleProductOrder(product: Product): string {
   const name = product.nombre || product.tipo || "Prenda Sunday";
@@ -38,61 +35,17 @@ export function formatSingleProductOrder(product: Product): string {
 
 export const SingleProductCheckoutActions: React.FC<SingleProductCheckoutActionsProps> = ({
   product,
-  instagramUsername = DEFAULT_INSTAGRAM_USERNAME,
   whatsappPhone = DEFAULT_WHATSAPP_PHONE,
   onSuccess,
   className = "",
 }) => {
-  const [isCopiedState, setIsCopiedState] = useState(false);
-  const [errorNotice, setErrorNotice] = useState<string | null>(null);
-
   const { addItem, isInCart, openCart } = useCartStore();
   const inCart = isInCart(product.id);
   const isAvailable = product.estado === "disponible";
 
-  const cleanUsername = instagramUsername.replace(/^@/, "").trim();
   const cleanPhone = whatsappPhone.replace(/\D/g, "").trim();
 
-  // 1. Pedir por Instagram (Copy order format + delay 1s + open ig.me/m/sunday.closet1)
-  const handleInstagramCheckout = async () => {
-    if (!isAvailable) return;
-
-    setErrorNotice(null);
-    const orderText = formatSingleProductOrder(product);
-
-    try {
-      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(orderText);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = orderText;
-        textarea.style.position = "fixed";
-        textarea.style.opacity = "0";
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-      setIsCopiedState(true);
-    } catch (err) {
-      console.warn("No se pudo copiar automáticamente al portapapeles:", err);
-      setErrorNotice("Copia tu pedido antes de enviar.");
-      setIsCopiedState(true);
-    }
-
-    setTimeout(() => {
-      const instagramUrl = `https://ig.me/m/${cleanUsername}`;
-      window.open(instagramUrl, "_blank");
-
-      setTimeout(() => {
-        setIsCopiedState(false);
-        setErrorNotice(null);
-        if (onSuccess) onSuccess();
-      }, 2500);
-    }, 1000);
-  };
-
-  // 2. Pedir por WhatsApp (Direct link with pre-filled message)
+  // Pedir por WhatsApp (Direct link with pre-filled message)
   const handleWhatsAppCheckout = () => {
     if (!isAvailable) return;
 
@@ -104,7 +57,7 @@ export const SingleProductCheckoutActions: React.FC<SingleProductCheckoutActions
     if (onSuccess) onSuccess();
   };
 
-  // 3. Agregar a la Bolsa / Ver Bolsa
+  // Agregar a la Bolsa / Ver Bolsa
   const handleCartAction = () => {
     if (!isAvailable) return;
 
@@ -117,78 +70,42 @@ export const SingleProductCheckoutActions: React.FC<SingleProductCheckoutActions
 
   return (
     <div className={`w-full space-y-2 select-none ${className}`}>
-      {/* 1. Botón Principal: "Pedir por Instagram" */}
-      <button
-        type="button"
-        disabled={!isAvailable || isCopiedState}
-        onClick={handleInstagramCheckout}
-        className={`w-full py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-lg active:scale-98 transition-all border ${
-          isCopiedState
-            ? "bg-emerald-600/90 text-white border-emerald-500 shadow-emerald-500/20"
-            : "bg-slate-900 hover:bg-slate-800 text-white border-slate-700 hover:border-pink-500/50 shadow-slate-950/60"
-        } ${!isAvailable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-      >
-        {isCopiedState ? (
-          <>
-            <Check className="w-4 h-4 stroke-[3] text-emerald-200 animate-in zoom-in-50 duration-200" />
-            <span className="font-semibold text-white tracking-normal text-xs normal-case">
-              {errorNotice || "¡Pedido copiado! Abriendo chat..."}
-            </span>
-          </>
-        ) : (
-          <>
-            <div className="p-1 rounded-lg bg-gradient-to-tr from-amber-500 via-rose-500 to-pink-500 text-white shrink-0">
-              <InstagramIcon className="w-3.5 h-3.5" />
-            </div>
-            <span>Pedir por Instagram DM</span>
-            <ArrowRight className="w-3.5 h-3.5 text-slate-400 ml-auto" />
-          </>
-        )}
-      </button>
-
-      {/* 2. Botón Secundario: "Pedir por WhatsApp" */}
-      <button
-        type="button"
-        disabled={!isAvailable}
-        onClick={handleWhatsAppCheckout}
-        className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-98 border ${
-          !isAvailable
-            ? "opacity-50 cursor-not-allowed border-slate-800 bg-slate-950/40 text-slate-500"
-            : "border-emerald-500/35 hover:border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300"
-        }`}
-      >
-        <MessageCircle className="w-4 h-4 text-emerald-400 fill-emerald-500/20" />
-        <span>Pedir por WhatsApp</span>
-      </button>
-
-      {/* 3. Tercera Opción: "Agregar a la Bolsa / En Bolsa" */}
+      {/* 1. Botón Primario: "AGREGAR A LA BOLSA" en Azul Marino Profundo */}
       <button
         type="button"
         disabled={!isAvailable}
         onClick={handleCartAction}
-        className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-98 border ${
-          inCart
-            ? "bg-slate-800/90 border-slate-700 text-emerald-300 hover:bg-slate-800"
-            : "bg-slate-800/40 hover:bg-slate-800 border-slate-700/80 text-slate-300 hover:text-white"
-        } ${!isAvailable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        className={`w-full py-3 px-4 rounded-xl font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] bg-[#0B1528] hover:bg-[#0B1528]/90 text-white ${
+          !isAvailable ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+        }`}
       >
         {inCart ? (
           <>
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>En la Bolsa de Compras</span>
+            <Check className="w-4 h-4 text-white stroke-[2.5]" />
+            <span>EN LA BOLSA DE COMPRAS</span>
           </>
         ) : (
           <>
-            <ShoppingBag className="w-4 h-4 text-slate-400" />
-            <span>Agregar a la Bolsa</span>
+            <ShoppingBag className="w-4 h-4 text-white" />
+            <span>AGREGAR A LA BOLSA</span>
           </>
         )}
       </button>
 
-      {/* Microcopy informativo */}
-      <p className="text-[11px] text-slate-400 text-center leading-snug px-1 pt-0.5">
-        📋 Tu pedido se copiará automáticamente al portapapeles para que solo lo pegues en el chat de Instagram.
-      </p>
+      {/* 2. Botón Secundario: "PEDIR POR WHATSAPP" */}
+      <button
+        type="button"
+        disabled={!isAvailable}
+        onClick={handleWhatsAppCheckout}
+        className={`w-full py-2.5 px-4 rounded-xl font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98] border ${
+          !isAvailable
+            ? "opacity-50 cursor-not-allowed border-black/10 bg-[#F7F7F7] text-[#888888]"
+            : "border-emerald-500/40 hover:border-emerald-500/70 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 cursor-pointer"
+        }`}
+      >
+        <MessageCircle className="w-4 h-4 text-emerald-600 fill-emerald-500/15" />
+        <span>PEDIR POR WHATSAPP</span>
+      </button>
     </div>
   );
 };

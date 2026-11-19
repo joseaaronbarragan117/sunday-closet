@@ -33,17 +33,44 @@ export async function GET(request: Request) {
 
     const sheets = getGoogleSheetsClient();
     let response;
+    let headerRow: string[] = [];
     try {
-      response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: "'Inventario Central'!A2:V",
-      });
+      const [headerRes, dataRes] = await Promise.all([
+        sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: "'Inventario Central'!A1:Z1",
+        }),
+        sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: "'Inventario Central'!A2:Z",
+        }),
+      ]);
+      headerRow = headerRes.data.values?.[0] || [];
+      response = dataRes;
     } catch {
-      response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: 'A2:V',
-      });
+      const [headerRes, dataRes] = await Promise.all([
+        sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: 'A1:Z1',
+        }),
+        sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: 'A2:Z',
+        }),
+      ]);
+      headerRow = headerRes.data.values?.[0] || [];
+      response = dataRes;
     }
+
+    const lineaColIndex = headerRow.findIndex((h) => {
+      const normalized = (h || '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      return normalized === 'linea' || normalized === 'coleccion';
+    });
 
     const rows = response.data.values || [];
     const publicProducts = rows
@@ -72,9 +99,25 @@ export async function GET(request: Request) {
 
         const status = (row[8] || 'Disponible') as InventoryItem['status'];
 
+        const rawPhotoCell = (row[1] || '').toString().trim();
+        const photoUrls = rawPhotoCell
+          ? rawPhotoCell
+              .split(',')
+              .map((u) => formatDriveImageUrl(u.trim()))
+              .filter(Boolean)
+          : [];
+
+        const rawLinea =
+          lineaColIndex >= 0 && row[lineaColIndex]
+            ? row[lineaColIndex].toString().trim().toUpperCase()
+            : 'CLOSET';
+        const linea = rawLinea === 'SELECT' ? 'SELECT' : 'CLOSET';
+
         return {
           sku: row[0] || '',
-          photoUrl: formatDriveImageUrl(row[1]) || '',
+          photoUrl: photoUrls[0] || '',
+          photoUrls,
+          linea,
           type: row[2] || '',
           size: row[3] || 'Única',
           color: row[4] || '',

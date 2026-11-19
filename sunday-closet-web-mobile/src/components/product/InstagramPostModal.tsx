@@ -1,15 +1,9 @@
 // src/components/product/InstagramPostModal.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  Heart,
-  Share2,
-  Lock,
-  Tag,
-} from "lucide-react";
+import { X, Heart, Share2, Lock, Tag } from "lucide-react";
 import { Product } from "@/lib/data/mockProducts";
 import { formatPrice } from "@/lib/utils/format";
 import { DriveImage } from "@/components/common/DriveImage";
@@ -28,6 +22,21 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const [showHeartPop, setShowHeartPop] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+
+  const photos = useMemo(() => {
+    if (!product) return [];
+    if (product.fotos && product.fotos.length > 0) return product.fotos;
+    return product.imagenUrl ? [product.imagenUrl] : [];
+  }, [product]);
+
+  useEffect(() => {
+    setActivePhotoIndex(0);
+    if (carouselRef.current) {
+      carouselRef.current.scrollLeft = 0;
+    }
+  }, [product?.id]);
 
   if (!product) return null;
 
@@ -66,10 +75,19 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
     }
   };
 
+  const handleCarouselScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (!el.clientWidth) return;
+    const index = Math.round(el.scrollLeft / el.clientWidth);
+    if (index !== activePhotoIndex) {
+      setActivePhotoIndex(index);
+    }
+  };
+
   return (
     <AnimatePresence>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/45 backdrop-blur-sm overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
@@ -81,18 +99,18 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
           className="w-full max-w-lg bg-[#FFFFFF] border border-black/10 rounded-2xl overflow-hidden shadow-2xl my-auto flex flex-col max-h-[92vh] text-[#000000]"
         >
           {/* 1. Modal Header */}
-          <div className="px-5 py-3.5 border-b border-black/10 flex items-center justify-between bg-[#FFFFFF] shrink-0">
+          <div className="px-4 py-2.5 border-b border-black/10 flex items-center justify-between bg-[#FFFFFF] shrink-0">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] font-semibold text-[#000000] px-2.5 py-1 rounded-full bg-[#F7F7F7] border border-black/10">
+              <span className="font-mono text-[11px] font-semibold text-[#000000] px-2.5 py-0.5 rounded-full bg-[#F7F7F7] border border-black/10">
                 {product.id}
               </span>
               {isAvailable ? (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-black text-white flex items-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-black text-white flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   Disponible
                 </span>
               ) : isApartado ? (
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#F7F7F7] text-[#111111] border border-black/15 flex items-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#F7F7F7] text-[#111111] border border-black/15 flex items-center gap-1.5">
                   <Lock className="w-3 h-3" />
                   Apartado
                 </span>
@@ -101,41 +119,78 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 text-[#666666] hover:text-black rounded-full hover:bg-[#F7F7F7] transition-colors active:scale-95"
+              className="p-1 text-[#666666] hover:text-black rounded-full hover:bg-[#F7F7F7] transition-colors active:scale-95"
               aria-label="Cerrar modal"
             >
               <X className="w-5 h-5 stroke-[1.75]" />
             </button>
           </div>
 
-          {/* 2. Scrollable Body */}
-          <div className="p-4 sm:p-5 overflow-y-auto scrollbar-none space-y-4">
-            {/* Main Photo */}
+          {/* 2. Scrollable Body (Image capped at 50vh so title, price & primary button are immediately visible) */}
+          <div className="p-3.5 sm:p-5 overflow-y-auto scrollbar-none space-y-3">
+            {/* Main Photo / Multi-Image Carousel */}
             <div
               onDoubleClick={handleDoubleTap}
-              className="w-full aspect-[4/5] max-h-96 rounded-[6px] overflow-hidden bg-[#F7F7F7] relative select-none"
+              className="w-full h-[46vh] max-h-[52vh] rounded-[8px] overflow-hidden bg-[#F7F7F7] relative select-none"
             >
-              <DriveImage
-                src={product.imagenUrl}
-                alt={product.nombre || product.tipo}
-                className="w-full h-full object-cover"
-              />
+              {photos.length <= 1 ? (
+                <DriveImage
+                  src={photos[0] || product.imagenUrl}
+                  alt={product.nombre || product.tipo}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <>
+                  <div
+                    ref={carouselRef}
+                    onScroll={handleCarouselScroll}
+                    className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-none"
+                  >
+                    {photos.map((photoUrl, idx) => (
+                      <div
+                        key={`${product.id}-photo-${idx}`}
+                        className="min-w-full w-full h-full snap-center flex items-center justify-center"
+                      >
+                        <DriveImage
+                          src={photoUrl}
+                          alt={`${product.nombre || product.tipo} ${idx + 1}`}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Instagram-style Bottom Center Dots */}
+                  <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10 px-2 py-1 rounded-full bg-black/25 backdrop-blur-xs pointer-events-none">
+                    {photos.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`w-[6px] h-[6px] rounded-full transition-all duration-200 ${
+                          idx === activePhotoIndex
+                            ? "bg-white scale-110"
+                            : "bg-white/50 scale-100"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
 
               {/* Popping Heart Animation on Double-Tap */}
               {showHeartPop && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-in zoom-in-50 duration-200">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-in zoom-in-50 duration-200 z-20">
                   <Heart className="w-20 h-20 fill-black text-white drop-shadow-xl animate-pulse" />
                 </div>
               )}
 
               {/* Top-Right Favorite & Share Buttons */}
-              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleFavorite(product);
                   }}
-                  className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs border border-black/10 text-black flex items-center justify-center active:scale-90 transition-all shadow-xs"
+                  className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs border border-black/10 text-black flex items-center justify-center active:scale-90 transition-all shadow-xs"
                   aria-label="Favorito"
                 >
                   <Heart
@@ -150,7 +205,7 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
                     e.stopPropagation();
                     handleShare();
                   }}
-                  className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs border border-black/10 text-black flex items-center justify-center active:scale-90 transition-all relative shadow-xs"
+                  className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs border border-black/10 text-black flex items-center justify-center active:scale-90 transition-all relative shadow-xs"
                   aria-label="Compartir"
                 >
                   <Share2 className="w-4 h-4" />
@@ -163,29 +218,29 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
               </div>
             </div>
 
-            {/* Title, Brand, and Price Row */}
-            <div className="flex items-start justify-between gap-3 pt-1">
-              <div className="space-y-0.5">
-                <h3 className="text-[16px] font-semibold text-[#000000] leading-tight lowercase">
+            {/* Title, Brand, and Price Row (Immediately visible without scrolling) */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-0.5 min-w-0">
+                <h3 className="text-[15px] font-semibold text-[#000000] leading-tight lowercase truncate">
                   {product.nombre || product.tipo}
                 </h3>
-                <p className="text-[12px] text-[#666666]">
+                <p className="text-[12px] text-[#666666] truncate">
                   {product.marca || "Sunday Curated"} · talla {product.talla || "M"}
                 </p>
               </div>
 
               <div className="text-right shrink-0">
-                <span className="text-[18px] font-semibold text-[#000000]">
+                <span className="text-[17px] font-semibold text-[#000000]">
                   {formatPrice(product.precio)}
                 </span>
-                <span className="block text-[10px] text-[#666666] font-mono">
+                <span className="block text-[10px] text-[#666666] font-mono leading-none">
                   MXN
                 </span>
               </div>
             </div>
 
-            {/* Details Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+            {/* Details Grid (Visible on scroll) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-1">
               <div className="p-2.5 rounded-lg bg-[#F7F7F7]">
                 <span className="text-[10px] text-[#666666] block font-medium">Color</span>
                 <span className="font-medium text-[#111111]">{product.color || "—"}</span>
@@ -229,15 +284,15 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
             </p>
           </div>
 
-          {/* 3. Action Footer */}
-          <div className="px-5 py-4 border-t border-black/10 bg-[#FFFFFF] shrink-0">
+          {/* 3. Action Footer (Always immediately visible below image & price) */}
+          <div className="px-3.5 sm:px-5 py-3 border-t border-black/10 bg-[#FFFFFF] shrink-0">
             {isAvailable ? (
               <SingleProductCheckoutActions product={product} />
             ) : isApartado ? (
               <div className="space-y-1.5">
                 <button
                   disabled
-                  className="w-full py-3.5 px-4 rounded-full bg-[#F7F7F7] border border-black/15 text-[#666666] font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed"
+                  className="w-full py-3 px-4 rounded-xl bg-[#F7F7F7] border border-black/15 text-[#666666] font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   <span>Prenda Apartada (No disponible)</span>
@@ -247,7 +302,7 @@ export const InstagramPostModal: React.FC<InstagramPostModalProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="w-full py-3.5 text-center bg-[#F7F7F7] text-[#666666] rounded-full text-xs font-semibold uppercase tracking-wider border border-black/10">
+              <div className="w-full py-3 text-center bg-[#F7F7F7] text-[#666666] rounded-xl text-xs font-semibold uppercase tracking-wider border border-black/10">
                 Esta prenda ya fue adquirida
               </div>
             )}

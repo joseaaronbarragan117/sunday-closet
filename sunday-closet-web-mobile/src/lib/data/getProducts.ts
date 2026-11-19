@@ -27,6 +27,25 @@ function normalizePhotoUrl(url: string | undefined): string {
   return normalized || FALLBACK_IMAGE;
 }
 
+function parsePhotosArray(item: any): string[] {
+  if (Array.isArray(item.photoUrls) && item.photoUrls.length > 0) {
+    const cleaned = item.photoUrls
+      .map((u: string) => formatDriveImageUrl(String(u).trim()))
+      .filter(Boolean);
+    if (cleaned.length > 0) return cleaned;
+  }
+  const raw = String(item.fotos || item.photoUrl || item.imagenUrl || '').trim();
+  if (!raw) return [FALLBACK_IMAGE];
+  if (raw.includes(',')) {
+    const split = raw
+      .split(',')
+      .map((s) => formatDriveImageUrl(s.trim()))
+      .filter(Boolean);
+    return split.length > 0 ? split : [FALLBACK_IMAGE];
+  }
+  return [normalizePhotoUrl(raw)];
+}
+
 export function mapItemToProduct(item: any): Product {
   const rawType = item.type || item.nombre || 'Prenda';
   const rawBrand = item.brand || item.marca || 'Sunday Curated';
@@ -51,6 +70,10 @@ export function mapItemToProduct(item: any): Product {
     ? 'apartado'
     : 'vendido';
 
+  const fotos = parsePhotosArray(item);
+  const rawLinea = String(item.linea || item.coleccion || 'CLOSET').trim().toUpperCase();
+  const linea: 'CLOSET' | 'SELECT' = rawLinea === 'SELECT' ? 'SELECT' : 'CLOSET';
+
   return {
     id: rawSku,
     slug: itemSlug,
@@ -66,7 +89,9 @@ export function mapItemToProduct(item: any): Product {
     condicion: item.condition || item.condicion || 'Nuevo c/etiqueta',
     categoriaRopa,
     descripcion: item.descripcion || `${rawType} de ${rawBrand}. Talla ${item.size || item.talla || 'Única'}, color ${item.color || 'exclusivo'}. Prenda única seleccionada para Sunday Clóset.`,
-    imagenUrl: normalizePhotoUrl(item.photoUrl || item.imagenUrl),
+    imagenUrl: fotos[0] || FALLBACK_IMAGE,
+    fotos,
+    linea,
     drop: item.scheduledDropDate
       ? `Drop — ${item.scheduledDropDate}`
       : 'Drop Activo — Edición Limitada',

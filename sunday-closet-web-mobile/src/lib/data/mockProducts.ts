@@ -19,6 +19,8 @@ export interface Product {
   categoriaRopa: ClothingCategory;
   descripcion: string;
   imagenUrl: string;
+  fotos?: string[];
+  linea?: "CLOSET" | "SELECT";
   drop: string;       // ej. "Drop #01 — Verano 2025"
   visibleEnWeb: boolean;
 }

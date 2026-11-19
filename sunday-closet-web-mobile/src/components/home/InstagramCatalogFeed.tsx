@@ -31,10 +31,10 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
   initialProducts,
 }) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [activeCollection, setActiveCollection] = useState<"closet" | "select">("closet");
+  const [activeCollection, setActiveCollection] = useState<"CLOSET" | "SELECT">("CLOSET");
   const [isGridFading, setIsGridFading] = useState(false);
 
-  // Persistent filter states (preserved when switching CLÓSET <-> SELECT)
+  // Persistent filter states (preserved when switching CLOSET <-> SELECT)
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -45,7 +45,7 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const { isOpen: isCartOpen, openCart, closeCart, count: cartCount } = useCartStore();
 
-  // Background live sync with Google Sheets via Dashboard API (unchanged backend relation)
+  // Background live sync with Google Sheets via Dashboard API
   useEffect(() => {
     let isMounted = true;
     const fetchLatest = async () => {
@@ -75,7 +75,7 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
     };
   }, []);
 
-  const handleCollectionSwitch = (target: "closet" | "select") => {
+  const handleCollectionSwitch = (target: "CLOSET" | "SELECT") => {
     if (target === activeCollection) return;
     setIsGridFading(true);
     setTimeout(() => {
@@ -94,52 +94,30 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
     });
   };
 
-  // Filter Calculation (preserves searchQuery, category, size, status across CLÓSET/SELECT)
+  // Filter Calculation (preserves searchQuery, category, size, status across CLOSET/SELECT)
   const filteredProducts = useMemo(() => {
-    let list = [...products];
+    return products.filter((item) => {
+      const matchLine = (item.linea || "CLOSET").toUpperCase() === activeCollection.toUpperCase();
+      const matchCategory = selectedCategory === "all" || item.categoriaRopa === selectedCategory;
+      const matchStatus = selectedStatus === "all" || item.estado === selectedStatus;
+      const matchSize =
+        selectedSize === "all" || item.talla?.toUpperCase() === selectedSize.toUpperCase();
 
-    // Collection switch filter: CLÓSET (all curated) vs SELECT (Vintage / special curation)
-    if (activeCollection === "select") {
-      const selectSubset = list.filter(
-        (p) =>
-          p.estilo?.toLowerCase() === "vintage" ||
-          p.condicion?.toLowerCase().includes("etiqueta")
-      );
-      if (selectSubset.length > 0) {
-        list = selectSubset;
+      let matchSearch = true;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        matchSearch = Boolean(
+          item.nombre?.toLowerCase().includes(q) ||
+            item.tipo?.toLowerCase().includes(q) ||
+            item.marca?.toLowerCase().includes(q) ||
+            item.id?.toLowerCase().includes(q) ||
+            item.color?.toLowerCase().includes(q) ||
+            item.estilo?.toLowerCase().includes(q)
+        );
       }
-    }
 
-    // Search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (p) =>
-          p.nombre?.toLowerCase().includes(q) ||
-          p.tipo?.toLowerCase().includes(q) ||
-          p.marca?.toLowerCase().includes(q) ||
-          p.id?.toLowerCase().includes(q) ||
-          p.color?.toLowerCase().includes(q) ||
-          p.estilo?.toLowerCase().includes(q)
-      );
-    }
-
-    // Category filter
-    if (selectedCategory !== "all") {
-      list = list.filter((p) => p.categoriaRopa === selectedCategory);
-    }
-
-    // Status filter
-    if (selectedStatus !== "all") {
-      list = list.filter((p) => p.estado === selectedStatus);
-    }
-
-    // Size filter
-    if (selectedSize !== "all") {
-      list = list.filter((p) => p.talla?.toUpperCase() === selectedSize.toUpperCase());
-    }
-
-    return list;
+      return matchLine && matchCategory && matchStatus && matchSize && matchSearch;
+    });
   }, [products, activeCollection, searchQuery, selectedCategory, selectedStatus, selectedSize]);
 
   const activeCategoryLabel =
@@ -181,7 +159,7 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
           )}
         </button>
 
-        {/* Center Floating Switch ("CLÓSET" vs "SELECT") */}
+        {/* Center Floating Switch ("CLOSET" vs "SELECT") */}
         <div
           role="tablist"
           aria-label="Selector de colección"
@@ -192,27 +170,27 @@ export const InstagramCatalogFeed: React.FC<InstagramCatalogFeedProps> = ({
             <span
               aria-hidden="true"
               className={`absolute top-0 bottom-0 left-0 w-1/2 rounded-full bg-[#262626] transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
-                activeCollection === "select" ? "translate-x-full" : "translate-x-0"
+                activeCollection === "SELECT" ? "translate-x-full" : "translate-x-0"
               }`}
             />
 
             <button
               role="tab"
-              aria-selected={activeCollection === "closet"}
-              onClick={() => handleCollectionSwitch("closet")}
+              aria-selected={activeCollection === "CLOSET"}
+              onClick={() => handleCollectionSwitch("CLOSET")}
               className={`relative z-10 h-full rounded-full uppercase text-[12px] font-semibold tracking-[0.05em] flex items-center justify-center transition-opacity duration-200 cursor-pointer ${
-                activeCollection === "closet" ? "text-white opacity-100" : "text-white opacity-60"
+                activeCollection === "CLOSET" ? "text-white opacity-100" : "text-white opacity-60"
               }`}
             >
-              CLÓSET
+              CLOSET
             </button>
 
             <button
               role="tab"
-              aria-selected={activeCollection === "select"}
-              onClick={() => handleCollectionSwitch("select")}
+              aria-selected={activeCollection === "SELECT"}
+              onClick={() => handleCollectionSwitch("SELECT")}
               className={`relative z-10 h-full rounded-full uppercase text-[12px] font-semibold tracking-[0.05em] flex items-center justify-center transition-opacity duration-200 cursor-pointer ${
-                activeCollection === "select" ? "text-white opacity-100" : "text-white opacity-60"
+                activeCollection === "SELECT" ? "text-white opacity-100" : "text-white opacity-60"
               }`}
             >
               SELECT
