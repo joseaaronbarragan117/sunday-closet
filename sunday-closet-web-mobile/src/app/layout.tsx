@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
+  themeColor: "#FFFFFF",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Sunday Clóset",
   },
   icons: {
@@ -35,12 +35,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark overflow-x-hidden max-w-full w-full">
+    <html lang="es" className="overflow-x-hidden max-w-full w-full">
       <head>
         <meta name="referrer" content="no-referrer" />
       </head>
       <body
-        className={`${inter.variable} ${playfair.variable} font-sans bg-slate-950 text-slate-100 antialiased min-h-screen overflow-x-hidden max-w-full w-full`}
+        className={`${inter.variable} ${playfair.variable} font-sans bg-[#FFFFFF] text-[#000000] antialiased min-h-screen overflow-x-hidden max-w-full w-full`}
       >
         {children}
       </body>
